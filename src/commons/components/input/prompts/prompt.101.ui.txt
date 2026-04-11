@@ -41,7 +41,7 @@
                 - 기존의 공통컴포넌트와 스타일일관성을 통일하여 복합 컴포넌트(Compound Component)로 만들어낼 것.
 
 핵심요구사항) 아래 요구사항을 따를 것.
-            - Root 하위 3종(label / placeholder / addtional_text)을 import·조합.
+            - Root 하위 3종(label / placeholder / addtional_text)을 활용하여 import·조합할 것.
             - htmlFor / id는 Context 기본값으로 연결하고, 소비자가 id·htmlFor를 넘기면 그 값을 우선으로 함.
             - AdditionalText의 state가 없으면 Field의 error·success·aria-invalid와 자동 동기화한다 (error→error, success→success, 그 외 default).
             - 입력 필드의 시각 상태·가상클래스·표준 속성·아이콘(showLeftIcon/showRightIcon) 규칙은 기존 프롬프트와 동일하다.

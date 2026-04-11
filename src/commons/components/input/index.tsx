@@ -11,7 +11,7 @@ import {
 } from 'react';
 
 import { AddtionalText, type AddtionalTextProps, type AddtionalTextState } from './addtional_text';
-import { Label, type LabelProps, type LabelType } from './label';
+import { Label, type LabelProps } from './label';
 import { Placeholder, type PlaceholderProps } from './placeholder';
 import styles from './styles.module.css';
 
@@ -55,7 +55,9 @@ function InputRoot({ id: idProp, className, children, ...divProps }: InputRootPr
 
   const updateFieldDerived = useCallback((next: FieldDerived) => {
     setFieldDerived((prev) =>
-      prev.invalid === next.invalid && prev.success === next.success && prev.disabled === next.disabled
+      prev.invalid === next.invalid &&
+      prev.success === next.success &&
+      prev.disabled === next.disabled
         ? prev
         : next,
     );
@@ -128,13 +130,7 @@ function InputAddtionalText({ state, ...rest }: InputAddtionalTextProps) {
 
   const resolvedState: AddtionalTextState =
     state ??
-    (derived
-      ? derived.invalid
-        ? 'error'
-        : derived.success
-          ? 'success'
-          : 'default'
-      : 'default');
+    (derived ? (derived.invalid ? 'error' : derived.success ? 'success' : 'default') : 'default');
 
   return <AddtionalText state={resolvedState} {...rest} />;
 }
