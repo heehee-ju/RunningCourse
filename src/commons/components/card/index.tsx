@@ -16,6 +16,7 @@ type CardBaseProps = {
   onLikeClick?: () => void;
   onPrimaryActionClick?: () => void;
   onSecondaryActionClick?: () => void;
+  secondaryActionDisabled?: boolean;
 };
 
 type DefaultCardProps = CardBaseProps & {
@@ -42,6 +43,7 @@ export function Card({
   onLikeClick,
   onPrimaryActionClick,
   onSecondaryActionClick,
+  secondaryActionDisabled = false,
 }: CardProps) {
   const showActions = type === 'my-course' || type === 'liked-course';
 
@@ -147,6 +149,7 @@ export function Card({
               )
             }
             onClick={onSecondaryActionClick}
+            disabled={secondaryActionDisabled}
           >
             {type === 'my-course' ? '삭제' : '좋아요 취소'}
           </Button>

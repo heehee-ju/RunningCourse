@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * NavigationBar — Figma node 148:3498 (Gnb)
  * 버전: 1.0.0 · 생성: 2026-04-05
@@ -7,6 +9,7 @@
  */
 
 import type { IconName } from '@/commons/components/icons';
+import { useRequireAuthModal } from '@/commons/hooks/useRequireAuthModal';
 
 import { NavigationItem } from './navigation-item';
 import styles from './styles.module.css';
@@ -42,6 +45,7 @@ export function NavigationBar({
   activeHref,
   items = DEFAULT_ITEMS,
 }: NavigationBarProps) {
+  const { requireAuth, isPrivateRoute } = useRequireAuthModal();
   const rootClass = [styles.root, className].filter(Boolean).join(' ');
 
   return (
@@ -56,6 +60,16 @@ export function NavigationBar({
                 icon={item.icon}
                 label={item.label}
                 selected={selected}
+                onClick={(event) => {
+                  if (!isPrivateRoute(item.href)) {
+                    return;
+                  }
+
+                  const canNavigate = requireAuth({ redirectTo: item.href });
+                  if (!canNavigate) {
+                    event.preventDefault();
+                  }
+                }}
               />
             </li>
           );

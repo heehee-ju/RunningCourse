@@ -117,6 +117,26 @@
   width: 100%;
 }
 
+.infoLabelRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+}
+
+.infoButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-grey-600);
+  cursor: pointer;
+}
+
 /* ====================== textarea ====================== */
 
 .textarea {
@@ -134,7 +154,15 @@
   letter-spacing: var(--typography-body-lg-ko-desktop-letter-spacing);
   color: var(--color-black-500);
   outline: none;
-  transition: border-color 120ms ease;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+/* Input.Field와 동일 — hover 시 보더·배경 (placeholder/styles.module.css 66–73) */
+.textarea:hover:not(:focus) {
+  border-color: var(--color-grey-500);
+  background-color: var(--color-white_grey-50);
 }
 
 .textarea::placeholder {

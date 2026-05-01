@@ -6,6 +6,8 @@ import { Card } from '@/commons/components/card';
 import { ROUTES } from '@/commons/constants/url';
 import type { MypageRouteCardData, MypageTab } from '@/commons/types/mypage';
 
+import { useDeleteCourse } from './hooks/useDeleteCourse';
+
 export type RouteCardProps = {
   tab: MypageTab;
   route: MypageRouteCardData;
@@ -13,6 +15,7 @@ export type RouteCardProps = {
 
 export function RouteCard({ tab, route }: RouteCardProps) {
   const router = useRouter();
+  const { isDeleting, deleteCourse } = useDeleteCourse();
   const isMyCourse = tab === 'my-course';
   const locationText = route.start_address_region ?? '위치 정보 없음';
 
@@ -32,8 +35,11 @@ export function RouteCard({ tab, route }: RouteCardProps) {
         }
       }}
       onSecondaryActionClick={() => {
-        // 삭제·좋아요 취소는 추후 서버 액션 연동
+        if (isMyCourse) {
+          deleteCourse(route.id);
+        }
       }}
+      secondaryActionDisabled={isMyCourse && isDeleting}
     />
   );
 }

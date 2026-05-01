@@ -465,8 +465,8 @@ export default function CourseDetailMapPreview({ course, mapLabel }: CourseDetai
   /** 지도 인스턴스 생성·파기 (코스 단위로 언마운트 시 destroy) */
   useEffect(() => {
     let cancelled = false;
-    let pollTimer: ReturnType<typeof setTimeout> | null = null;
-    let fallbackReadyTimer: ReturnType<typeof setTimeout> | null = null;
+    let pollTimer: number | null = null;
+    let fallbackReadyTimer: number | null = null;
     let removeZoomClamp: (() => void) | null = null;
     let idleHandler: (() => void) | null = null;
 

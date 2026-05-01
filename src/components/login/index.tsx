@@ -15,6 +15,7 @@
 'use client';
 
 import { Button } from '@/commons/components/button';
+import { Spinner } from '@/commons/components/spinner';
 
 import { useAnonymousLogin } from './hooks/index.anonymous.login.hook';
 import { useGoogleLogin } from './hooks/index.google.login.hook';
@@ -68,6 +69,7 @@ const GoogleIcon = () => (
 export default function Login({ returnTo = '/' }: LoginProps) {
   const { trigger: googleLogin, isPending: isGooglePending } = useGoogleLogin({ returnTo });
   const { trigger: anonymousLogin, isLoading: isGuestPending } = useAnonymousLogin({ returnTo });
+  const isBusy = isGooglePending || isGuestPending;
 
   return (
     <div className={styles.container}>
@@ -89,7 +91,7 @@ export default function Login({ returnTo = '/' }: LoginProps) {
             borderRadius="r12"
             leftIcon={<GoogleIcon />}
             className={styles.googleButton}
-            disabled={isGooglePending}
+            disabled={isBusy}
             onClick={googleLogin}
           >
             {TEXTS.GOOGLE_LOGIN}
@@ -101,13 +103,19 @@ export default function Login({ returnTo = '/' }: LoginProps) {
             size="medium"
             borderRadius="r12"
             className={styles.guestButton}
-            disabled={isGuestPending}
+            disabled={isBusy}
             onClick={anonymousLogin}
           >
             {TEXTS.GUEST_LOGIN}
           </Button>
         </div>
       </div>
+
+      {isBusy ? (
+        <div className={styles.loadingOverlay} aria-busy="true" aria-live="polite">
+          <Spinner size="lg" />
+        </div>
+      ) : null}
     </div>
   );
 }

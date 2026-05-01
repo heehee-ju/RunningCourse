@@ -25,6 +25,11 @@ type LayoutProps = {
   children: ReactNode;
 };
 
+function navigationActiveHref(pathname: string): string {
+  if (pathname === '/home') return '/';
+  return pathname;
+}
+
 export function Layout({ children }: LayoutProps) {
   const pathname = usePathname();
   const showNavigationBar =
@@ -37,7 +42,7 @@ export function Layout({ children }: LayoutProps) {
         <main className={styles.middle}>{children}</main>
         {showNavigationBar && (
           <div className={styles.bottom}>
-            <NavigationBar />
+            <NavigationBar activeHref={navigationActiveHref(pathname)} />
           </div>
         )}
       </div>

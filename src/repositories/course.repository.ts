@@ -2,6 +2,7 @@
 // Supabase와 통신하여 코스 데이터를 가져옴 (UI/Service에 Supabase 코드 금지)
 
 import type { Route } from '@/commons/types/runroute';
+import { createClient } from '@/lib/supabase/server';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -144,4 +145,24 @@ export async function getLikedRoutesByUserId(
   }
 
   return { data: normalizeRouteRows(routeRows), error: null };
+}
+
+export async function deleteRoute(routeId: string, userId: string): Promise<void> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('routes')
+    .delete()
+    .eq('id', routeId)
+    .eq('user_id', userId)
+    .select('id')
+    .returns<{ id: string }[]>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data || data.length === 0) {
+    throw new Error('삭제할 코스를 찾을 수 없거나 삭제 권한이 없습니다.');
+  }
 }

@@ -27,27 +27,14 @@
   z-index: 5;
 }
 
-.controlButton {
-  width: auto !important;
-  height: 36px !important;
-  padding: 9px 17px !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  line-height: 16.8px !important;
-  border-color: #e2e8f0 !important;
-  color: #020618 !important;
-  background: #fafafa !important;
-  opacity: 0.9;
-}
-
 .bottomPanel {
   position: absolute;
   left: 12px;
   right: 12px;
-  bottom: 12px;
+  bottom: 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 8px;
   padding: 8px;
   border-radius: 14px;
@@ -56,7 +43,7 @@
 
 .metaPanel {
   min-width: 0;
-  flex: 1;
+  flex: 0 1 auto;
   border-radius: 12px;
   padding: 9px 12px;
   background: rgba(17, 24, 39, 0.72);
@@ -87,16 +74,3 @@
   color: #fecaca;
 }
 
-.saveButton {
-  width: auto !important;
-  height: 36px !important;
-  padding: 9px 17px !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  line-height: 16.8px !important;
-  background: #020618 !important;
-  color: #fafafa !important;
-  border-color: #020618 !important;
-  white-space: nowrap;
-  flex-shrink: 0;
-}

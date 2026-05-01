@@ -131,3 +131,7 @@ export async function submitNewCourse(
 
   return courseRepository.createCourse(supabase, payload);
 }
+
+export async function deleteCourse(routeId: string, userId: string): Promise<void> {
+  await courseRepository.deleteRoute(routeId, userId);
+}

@@ -79,7 +79,14 @@ export function ModalProvider({ children }: ModalProviderProps) {
       {typeof window !== 'undefined' &&
         modalOptions !== null &&
         createPortal(
-          <div className={styles.backdrop} role="dialog" aria-modal="true">
+          <div
+            className={styles.backdrop}
+            role="dialog"
+            aria-modal="true"
+            onPointerDown={(event) => event.stopPropagation()}
+            onTouchStart={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+          >
             {modalOptions.renderContent ? (
               modalOptions.renderContent({ closeModal })
             ) : (

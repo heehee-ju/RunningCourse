@@ -7,17 +7,17 @@ import { updateSession } from '@/lib/supabase/middleware';
 export async function middleware(request: NextRequest) {
   const { supabaseResponse, user } = await updateSession(request);
 
-  const pathname = request.nextUrl.pathname;
+  const { pathname, search } = request.nextUrl;
 
   const isPrivate =
     (PRIVATE_ROUTES as readonly string[]).some((route) => route === pathname) ||
     PRIVATE_DYNAMIC_PATTERNS.some((pattern) => pattern.test(pathname));
 
+  // private 라우트는 "세션 없음"만 차단한다. (게스트 세션은 허용)
   if (isPrivate && !user) {
-    const loginUrl = new URL(
-      `/login?next=${encodeURIComponent(pathname)}`,
-      request.url,
-    );
+    const loginUrl = new URL('/login', request.url);
+    const redirectTo = `${pathname}${search}`;
+    loginUrl.searchParams.set('redirect_to', redirectTo);
     return NextResponse.redirect(loginUrl);
   }
 

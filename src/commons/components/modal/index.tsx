@@ -9,6 +9,8 @@ type ModalBaseProps = {
   className?: string;
   type: ModalType;
   title: string;
+  /** 제목 아래 본문 (확인·알림 등) */
+  content?: string;
   confirmText?: string;
   onConfirm?: () => void;
   confirmDisabled?: boolean;
@@ -18,12 +20,14 @@ type ConfirmModalProps = ModalBaseProps & {
   type: 'confirm';
   cancelText?: string;
   onCancel?: () => void;
+  onClose?: () => void;
 };
 
 type FormModalProps = ModalBaseProps & {
   type: 'form';
   cancelText?: string;
   onCancel?: () => void;
+  onClose?: () => void;
   inputLabel: string;
   /** 미지정 시 `inputRequired`에 따라 `required` / `none`(피그마 148:3557 — 라벨 + 필드 동시 노출) */
   inputLabelType?: LabelType;
@@ -43,17 +47,43 @@ type AlertModalProps = ModalBaseProps & {
 export type ModalProps = ConfirmModalProps | FormModalProps | AlertModalProps;
 
 export function Modal(props: ModalProps) {
-  const { className, type, title, confirmText, onConfirm, confirmDisabled = false } = props;
+  const {
+    className,
+    type,
+    title,
+    content,
+    confirmText,
+    onConfirm,
+    confirmDisabled = false,
+  } = props;
   const rootClass = [styles.root, className].filter(Boolean).join(' ');
   const resolvedConfirmText = confirmText ?? (type === 'form' ? '저장' : '확인');
 
   const cancelText =
     type === 'confirm' || type === 'form' ? (props.cancelText ?? '취소') : undefined;
-  const onCancel = type === 'confirm' || type === 'form' ? props.onCancel : undefined;
+  const onCancel =
+    type === 'confirm' || type === 'form' ? (props.onCancel ?? props.onClose) : undefined;
+
+  const stopEventPropagation = (
+    event:
+      | React.MouseEvent<HTMLElement>
+      | React.TouchEvent<HTMLElement>
+      | React.PointerEvent<HTMLElement>,
+  ) => {
+    event.stopPropagation();
+  };
 
   return (
-    <section className={rootClass} aria-label={title}>
+    <section
+      className={rootClass}
+      aria-label={title}
+      onPointerDown={stopEventPropagation}
+      onTouchStart={stopEventPropagation}
+      onClick={stopEventPropagation}
+    >
       <h2 className={styles.title}>{title}</h2>
+
+      {content ? <p className={styles.content}>{content}</p> : null}
 
       {type === 'form' ? (
         <div className={styles.inputWrap}>
@@ -87,7 +117,7 @@ export function Modal(props: ModalProps) {
             size="medium"
             color="dark"
             className={styles.actionButton}
-            onClick={onCancel}
+            onClick={() => onCancel?.()}
           >
             {cancelText}
           </Button>

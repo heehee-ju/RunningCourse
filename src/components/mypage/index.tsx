@@ -17,13 +17,20 @@
 
 'use client';
 
+import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+
 import { Button } from '@/commons/components/button';
 import { Icon } from '@/commons/components/icons';
+import { Modal } from '@/commons/components/modal';
 import { Header } from '@/commons/layout/header';
+import { useAuth } from '@/commons/providers/auth/auth.provider';
+import modalBackdropStyles from '@/commons/providers/modal/modal.provider.module.css';
 import type { MypageProfileProps, MypageRouteCardData } from '@/commons/types/mypage';
-import { useMyPageTabs } from '@/hooks/useMyPageTabs';
 
-import { useLogout } from './hooks/index.logout.hook';
+import { useLogout } from './hooks/useLogout';
+import { useLogoutModal } from './hooks/useLogoutModal';
+import { useMyPageTabs } from './hooks/useMyPageTabs';
 import { useProfileModal } from './hooks/useProfileModal';
 import { RouteCard } from './RouteCard';
 import styles from './styles.module.css';
@@ -45,7 +52,18 @@ export type MypageProps = {
 
 export default function Mypage({ profile, myRoutes, likedRoutes }: MypageProps) {
   const { activeTab, setTab, courses } = useMyPageTabs(myRoutes, likedRoutes);
-  const { trigger: handleLogout, isPending: isLogoutPending } = useLogout();
+  const { isAnonymous } = useAuth();
+  const { executeLogoutOrDelete, isPending: isLogoutPending, isError } = useLogout();
+  const { isOpen, openModal, closeModal, handleConfirm, modalData } = useLogoutModal(
+    isAnonymous,
+    executeLogoutOrDelete,
+  );
+
+  useEffect(() => {
+    if (isError) {
+      alert('요청 처리 중 문제가 발생했습니다. 다시 시도해 주세요.');
+    }
+  }, [isError]);
 
   const emptyMessage = activeTab === 'my-course' ? TEXTS.EMPTY_MY : TEXTS.EMPTY_LIKED;
   const { open } = useProfileModal({
@@ -59,7 +77,7 @@ export default function Mypage({ profile, myRoutes, likedRoutes }: MypageProps) 
         showLeftIcon={false}
         showRightIcon={true}
         rightIconName="logOut"
-        onRightIconClick={isLogoutPending ? undefined : handleLogout}
+        onRightIconClick={isLogoutPending ? undefined : openModal}
       />
 
       <section className={styles.profileSection} aria-label="프로필">
@@ -106,6 +124,28 @@ export default function Mypage({ profile, myRoutes, likedRoutes }: MypageProps) 
           courses.map((route) => <RouteCard key={route.id} tab={activeTab} route={route} />)
         )}
       </section>
+
+      {typeof window !== 'undefined' &&
+        isOpen &&
+        createPortal(
+          <div
+            className={modalBackdropStyles.backdrop}
+            role="dialog"
+            aria-modal="true"
+            onPointerDown={(event) => event.stopPropagation()}
+            onTouchStart={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Modal
+              type="confirm"
+              title={modalData.title}
+              content={modalData.content}
+              onConfirm={handleConfirm}
+              onClose={closeModal}
+            />
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

@@ -11,6 +11,18 @@
     color-mix(in srgb, var(--color-black-500) 25%, transparent);
 }
 
+.content {
+  margin: 0;
+  text-align: center;
+  color: var(--color-black-500);
+  font-family: var(--typography-body-lg-ko-desktop-font-family);
+  font-size: var(--typography-body-lg-ko-desktop-font-size);
+  font-style: var(--typography-body-lg-ko-desktop-font-style);
+  font-weight: var(--typography-body-lg-ko-desktop-font-weight);
+  line-height: var(--typography-body-lg-ko-desktop-line-height);
+  letter-spacing: var(--typography-body-lg-ko-desktop-letter-spacing);
+}
+
 .title {
   margin: 0;
   text-align: center;

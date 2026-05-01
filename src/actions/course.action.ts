@@ -6,15 +6,18 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
-import { reverseGeocodeRegion } from '@/commons/utils/geo';
 import { createClient } from '@/lib/supabase/server';
 import * as courseRepository from '@/repositories/course.repository';
+import { reverseGeocodeRegion } from '@/repositories/map.repository';
+import * as courseService from '@/services/course/courseService';
 import type { SubmitCourseInput } from '@/services/course/courseService';
 
 export type CreateCourseActionError = {
   success: false;
   message: string;
 };
+
+type DeleteCourseActionResult = { success: true } | { success: false; error: string };
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
@@ -63,7 +66,6 @@ export async function createCourseAction(
     start_address_region = await reverseGeocodeRegion({
       lat: start_lat,
       lng: start_lng,
-      appKey: process.env.NEXT_PUBLIC_TMAP_API_KEY!,
     });
   } catch (error) {
     console.error('[createCourseAction] 역지오코딩 실패:', error);
@@ -91,4 +93,42 @@ export async function createCourseAction(
 
   revalidatePath('/');
   redirect('/');
+}
+
+export async function deleteCourseAction(routeId: string): Promise<DeleteCourseActionResult> {
+  try {
+    if (!routeId.trim()) {
+      return {
+        success: false,
+        error: '유효하지 않은 코스 ID입니다.',
+      };
+    }
+
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return {
+        success: false,
+        error: '인증되지 않은 사용자입니다.',
+      };
+    }
+
+    await courseService.deleteCourse(routeId, user.id);
+
+    revalidatePath('/mypage');
+    revalidatePath('/');
+
+    return { success: true };
+  } catch (error) {
+    console.error('[deleteCourseAction] 코스 삭제 실패:', error);
+
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : '코스 삭제 중 알 수 없는 오류가 발생했습니다.',
+    };
+  }
 }

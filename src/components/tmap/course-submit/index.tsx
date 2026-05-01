@@ -60,7 +60,6 @@ export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) 
           size="small"
           color="dark"
           leftIcon={<Icon name="undo-2" size={16} />}
-          className={styles.controlButton}
           onClick={undo}
           disabled={points.length === 0}
         >
@@ -72,7 +71,6 @@ export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) 
           size="small"
           color="dark"
           leftIcon={<Icon name="rotateCcw" size={16} />}
-          className={styles.controlButton}
           onClick={reset}
           disabled={points.length === 0}
         >
@@ -98,7 +96,6 @@ export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) 
           size="small"
           color="dark"
           leftIcon={<Icon name="save" size={16} />}
-          className={styles.saveButton}
           onClick={() => void saveRoute()}
           disabled={isSaving || points.length < 2}
         >

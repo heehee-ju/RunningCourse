@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 
+import { useModal } from '@/commons/providers/modal/modal.provider';
 import type { TmapCoordinate, TmapLatLngLike, TmapMapLike } from '@/commons/types/tmap';
 import { getPedestrianRoute } from '@/repositories/map.repository';
 
@@ -27,6 +28,7 @@ export function useCourseMap({ onSaveRoute }: UseCourseMapParams = {}) {
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { openModal } = useModal();
 
   const mapRef = useRef<TmapMapLike | null>(null);
 
@@ -80,7 +82,7 @@ export function useCourseMap({ onSaveRoute }: UseCourseMapParams = {}) {
     clearPolyline();
   }, [clearMarkers, clearPolyline]);
 
-  const saveRoute = useCallback(async () => {
+  const runSaveRoute = useCallback(async () => {
     if (points.length < 2) {
       setErrorMessage('출발지와 도착지를 포함해 최소 2개의 지점을 선택해 주세요.');
       return;
@@ -124,6 +126,17 @@ export function useCourseMap({ onSaveRoute }: UseCourseMapParams = {}) {
       setIsSaving(false);
     }
   }, [drawRoutePolyline, onSaveRoute, points]);
+
+  const saveRoute = useCallback(() => {
+    openModal({
+      type: 'confirm',
+      title: '저장하시겠습니까?',
+      confirmText: '저장',
+      onConfirm: () => {
+        void runSaveRoute();
+      },
+    });
+  }, [openModal, runSaveRoute]);
 
   const isPointLimitReached = points.length >= MAX_POINT_LENGTH;
   const waypointCount = useMemo(() => Math.max(0, points.length - 2), [points.length]);
