@@ -7,11 +7,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Route } from '@/commons/types/runroute';
 import type { TmapV3 } from '@/commons/types/tmap';
-import { applyPointerCursorToTmapMarker } from '@/components/tmap/shared/apply-pointer-cursor-to-tmap-marker';
 import {
-  buildWaypointMarkerIconUrl,
-  getWaypointMarkerTitle,
-  WAYPOINT_MARKER_ICON_SIZE,
+  getWaypointMarkerIconUrl,
   type WaypointMarkerRole,
 } from '@/components/tmap/shared/build-waypoint-marker-icon';
 import { getPedestrianRoute } from '@/repositories/map.repository';
@@ -559,26 +556,14 @@ export default function CourseDetailMapPreview({ course, mapLabel }: CourseDetai
 
     const drawMarkers = () => {
       waypointMarkerModels.forEach((model) => {
-        const icon = buildWaypointMarkerIconUrl(model.role, model.label);
         const markerOptions: Record<string, unknown> = {
+          // Tmap 공식 예제와 동일하게 LatLng(lat, lon) 순서로 변환한다.
           position: new Tmapv3.LatLng(model.lat, model.lng),
+          icon: getWaypointMarkerIconUrl(model.role),
           map: mapInstance,
-          title: getWaypointMarkerTitle(model.role),
-          icon,
-          iconSize: new Tmapv3.Size(
-            WAYPOINT_MARKER_ICON_SIZE.width,
-            WAYPOINT_MARKER_ICON_SIZE.height,
-          ),
         };
-        if (Tmapv3.Point) {
-          const anchorX = WAYPOINT_MARKER_ICON_SIZE.width / 2;
-          const anchorY = WAYPOINT_MARKER_ICON_SIZE.height;
-          markerOptions.iconAnchor = new Tmapv3.Point(anchorX, anchorY);
-          markerOptions.offset = new Tmapv3.Point(anchorX, anchorY);
-        }
 
         const marker = new Tmapv3.Marker(markerOptions) as unknown as MapDetachableOverlay;
-        applyPointerCursorToTmapMarker(marker as { getElement?: () => HTMLElement | null });
         waypointMarkersRef.current.push(marker);
       });
     };
