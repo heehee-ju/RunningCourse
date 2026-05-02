@@ -28,6 +28,11 @@ function roundCoordForLog(n: number): number {
   return Math.round(n * 1e8) / 1e8;
 }
 
+/** 티맵 공식 예제: `new Tmapv3.extension.MarkerCluster({ markers, map })` */
+type TmapMarkerCluster = {
+  setMap?: (map: TmapMap | null) => void;
+};
+
 type TmapV3API = {
   Map: new (id: string, options: Record<string, unknown>) => TmapMap;
   LatLng: new (lat: number, lng: number) => TmapLatLng;
@@ -35,6 +40,9 @@ type TmapV3API = {
   Point?: new (x: number, y: number) => unknown;
   Marker: new (options: Record<string, unknown>) => TmapMarker;
   Polyline: new (options: Record<string, unknown>) => TmapPolyline;
+  extension?: {
+    MarkerCluster: new (options: { markers: TmapMarker[]; map: TmapMap }) => TmapMarkerCluster;
+  };
   event?: {
     addListener?: (target: TmapMarker, eventName: string, callback: () => void) => void;
   };
@@ -130,6 +138,9 @@ const PRECISE_GEOLOCATION_OPTIONS: PositionOptions = {
 
 const MIN_ZOOM_LEVEL = 11;
 const MAX_ZOOM_LEVEL = 19;
+
+/** 홈 지도 최초 표시 줌. 값이 작을수록 현재 위치 주변이 더 넓게(줌 아웃) 보임 */
+const INITIAL_MAP_ZOOM_LEVEL = 14;
 const MARKER_VISIBILITY_DEBOUNCE_MS = 140;
 
 function escapeHtml(value: string): string {
@@ -230,6 +241,7 @@ export function TmapHome({
   const selectedLabelMarkerRef = useRef<TmapMarker | null>(null);
   const selectedRoutePolylineRef = useRef<TmapPolyline | null>(null);
   const routeMarkerMapRef = useRef<Map<string, RouteMarkerEntry>>(new Map());
+  const routeMarkerClusterRef = useRef<TmapMarkerCluster | null>(null);
   const routesRef = useRef<Route[]>(routes);
   const selectedRouteIdRef = useRef<string | null>(null);
   const viewportReportTimerRef = useRef<number | null>(null);
@@ -387,13 +399,40 @@ export function TmapHome({
   );
 
   const syncMarkerVisibilityByViewport = useCallback((map: TmapMap) => {
-    // 공식 예제와 동일하게 마커는 지도 인스턴스에 직접 attach 상태를 유지한다.
+    // MarkerCluster가 활성화되면 표시 제어는 클러스터러에 위임한다.
+    if (routeMarkerClusterRef.current) {
+      return;
+    }
     routeMarkerMapRef.current.forEach((entry) => {
       entry.marker.setMap(map);
       entry.isVisible = true;
       entry.outOfViewportSinceMs = null;
     });
   }, []);
+
+  const tearDownRouteMarkerCluster = useCallback(() => {
+    const cluster = routeMarkerClusterRef.current;
+    if (!cluster) return;
+    cluster.setMap?.(null);
+    routeMarkerClusterRef.current = null;
+  }, []);
+
+  /** 티맵 벡터 SDK `Tmapv3.extension.MarkerCluster` 등록 (확장 미로드 시 noop) */
+  const attachRouteMarkersCluster = useCallback(
+    (map: TmapMap) => {
+      const Tmapv3 = getTmapv3();
+      const MarkerCluster = Tmapv3?.extension?.MarkerCluster;
+      if (!MarkerCluster) return;
+
+      tearDownRouteMarkerCluster();
+
+      const markers = Array.from(routeMarkerMapRef.current.values(), (entry) => entry.marker);
+      if (markers.length === 0) return;
+
+      routeMarkerClusterRef.current = new MarkerCluster({ markers, map });
+    },
+    [tearDownRouteMarkerCluster],
+  );
 
   const scheduleMarkerVisibilitySync = useCallback(
     (map: TmapMap) => {
@@ -747,8 +786,12 @@ export function TmapHome({
         outOfViewportSinceMs: markerEntry.outOfViewportSinceMs,
       });
       attachRouteMarkerListeners(nextMarker, courseId);
+
+      if (getTmapv3()?.extension?.MarkerCluster) {
+        attachRouteMarkersCluster(map);
+      }
     },
-    [attachRouteMarkerListeners, createRouteMarker],
+    [attachRouteMarkerListeners, attachRouteMarkersCluster, createRouteMarker],
   );
   routeVisualStateHandlerRef.current = setRouteMarkerVisualState;
 
@@ -777,11 +820,12 @@ export function TmapHome({
   }, [setRouteMarkerLabelVisible]);
 
   const clearRouteMarkers = useCallback(() => {
+    tearDownRouteMarkerCluster();
     routeMarkerMapRef.current.forEach((entry) => {
       entry.marker.setMap(null);
     });
     routeMarkerMapRef.current.clear();
-  }, []);
+  }, [tearDownRouteMarkerCluster]);
 
   const syncSelectedMarkerVisual = useCallback(
     (nextSelectedCourseId: string | null) => {
@@ -850,8 +894,16 @@ export function TmapHome({
         attachRouteMarkerListeners(marker, route.id);
         setRouteMarkerLabelVisible(route.id, selectedRouteIdRef.current === route.id);
       });
+
+      attachRouteMarkersCluster(map);
     },
-    [attachRouteMarkerListeners, clearRouteMarkers, createRouteMarker, setRouteMarkerLabelVisible],
+    [
+      attachRouteMarkerListeners,
+      attachRouteMarkersCluster,
+      clearRouteMarkers,
+      createRouteMarker,
+      setRouteMarkerLabelVisible,
+    ],
   );
 
   // [이벤트] 현재 위치 재탐색 버튼 처리
@@ -937,7 +989,7 @@ export function TmapHome({
         center: new Tmapv3.LatLng(lat, lng),
         width: '100%',
         height: '100%',
-        zoom: 15,
+        zoom: INITIAL_MAP_ZOOM_LEVEL,
         minZoom: MIN_ZOOM_LEVEL,
         zoomControl: false,
         scrollwheel: false,
@@ -994,6 +1046,8 @@ export function TmapHome({
 
     return () => {
       cancelled = true;
+      routeMarkerClusterRef.current?.setMap?.(null);
+      routeMarkerClusterRef.current = null;
       routeMarkerMap.forEach((entry) => {
         entry.marker.setMap(null);
       });
