@@ -147,7 +147,8 @@ export function useCourseSubmit({ mode, courseId, initialData }: UseCourseSubmit
 
         router.push(`/courses/${courseId.trim()}`);
       } catch (error) {
-        const message = error instanceof Error ? error.message : '코스 수정 중 오류가 발생했습니다.';
+        const message =
+          error instanceof Error ? error.message : '코스 수정 중 오류가 발생했습니다.';
         window.alert(message);
       }
       return;

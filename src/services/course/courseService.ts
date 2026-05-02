@@ -4,7 +4,10 @@
 import type { MypageRouteCardData } from '@/commons/types/mypage';
 import type { Route } from '@/commons/types/runroute';
 import * as courseRepository from '@/repositories/course/course.repository';
-import type { InsertRouteParams, UpdateCourseParams } from '@/repositories/course/course.repository';
+import type {
+  InsertRouteParams,
+  UpdateCourseParams,
+} from '@/repositories/course/course.repository';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
