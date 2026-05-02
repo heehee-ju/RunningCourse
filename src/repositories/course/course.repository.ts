@@ -93,6 +93,46 @@ export async function createRoute(
 
 export const createCourse = createRoute;
 
+/** `routes` 테이블에서 제목·설명·이미지 등 메타데이터만 갱신할 때 사용 */
+export interface UpdateCourseParams {
+  courseId: string;
+  userId: string;
+  title: string;
+  description: string | null;
+  image_urls: string[];
+}
+
+/**
+ * 주어진 코스의 title, description, image_urls, updated_at을 갱신하고
+ * 갱신된 행을 조회 모델(`Route`)로 반환한다.
+ */
+export async function updateCourse(
+  supabase: SupabaseClient,
+  params: UpdateCourseParams,
+): Promise<{ data: Route | null; error: Error | null }> {
+  const { courseId, userId, title, description, image_urls } = params;
+
+  const { data, error } = await supabase
+    .from('routes')
+    .update({
+      title,
+      description,
+      image_urls,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', courseId)
+    .eq('user_id', userId)
+    .select(ROUTE_SELECT)
+    .single()
+    .returns<RouteRow>();
+
+  if (error) {
+    return { data: null, error: new Error(error.message) };
+  }
+
+  return { data: toRoute(data), error: null };
+}
+
 /** 현재 유저가 작성한 코스(`routes.user_id`) 목록 */
 export async function getRoutesByUserId(
   supabase: SupabaseClient,
