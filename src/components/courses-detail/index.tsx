@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 
 import { Icon } from '@/commons/components/icons';
+import { ROUTES } from '@/commons/constants/url';
 import { Header } from '@/commons/layout/header';
 import type { Route } from '@/commons/types/runroute';
 import { useCourseLikes } from '@/hooks/useCourseLikes';
@@ -37,9 +38,11 @@ type CoursesDetailProps = {
   course: Route;
   authorNickname: string;
   location: string;
+  /** 로그인한 사용자가 이 코스 작성자일 때만 헤더 수정 버튼 표시 */
+  canEdit?: boolean;
 };
 
-export function Courses({ course, authorNickname, location }: CoursesDetailProps) {
+export function Courses({ course, authorNickname, location, canEdit = false }: CoursesDetailProps) {
   const router = useRouter();
   const distanceText = `${(course.distance_meters / 1000).toFixed(1)}km`;
   const courseLikeCounts = useMemo(
@@ -60,7 +63,12 @@ export function Courses({ course, authorNickname, location }: CoursesDetailProps
     <main className={styles.container}>
       <Header
         title="코스 상세"
-        showRightIcon={false}
+        showRightIcon={canEdit}
+        rightIconName="pencil"
+        rightIconAriaLabel="코스 수정"
+        onRightIconClick={() => {
+          router.push(ROUTES.COURSES.EDIT(course.id));
+        }}
         onLeftIconClick={() => {
           // history.length는 브라우저별 추정치라 신뢰하면 안 됨(오탐 시 홈으로만 이동하는 버그).
           // 마이페이지·홈 등 이전 페이지는 브라우저 세션 스택의 router.back()으로 복귀한다.
