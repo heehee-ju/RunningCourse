@@ -27,12 +27,9 @@ export function RouteCard({ tab, route }: RouteCardProps) {
       location={locationText}
       distanceText={route.distanceText}
       likeCount={route.likeCount}
+      primaryActionLabel={isMyCourse ? '상세보기' : undefined}
       onPrimaryActionClick={() => {
-        if (isMyCourse) {
-          router.push(ROUTES.COURSES.EDIT(route.id));
-        } else {
-          router.push(ROUTES.COURSES.DETAIL(route.id));
-        }
+        router.push(ROUTES.COURSES.DETAIL(route.id));
       }}
       onSecondaryActionClick={() => {
         if (isMyCourse) {
