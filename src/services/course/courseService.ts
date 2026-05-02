@@ -3,8 +3,11 @@
 
 import type { MypageRouteCardData } from '@/commons/types/mypage';
 import type { Route } from '@/commons/types/runroute';
-import * as courseRepository from '@/repositories/course.repository';
-import type { InsertRouteParams } from '@/repositories/course.repository';
+import * as courseRepository from '@/repositories/course/course.repository';
+import type {
+  InsertRouteParams,
+  UpdateCourseParams,
+} from '@/repositories/course/course.repository';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -134,4 +137,15 @@ export async function submitNewCourse(
 
 export async function deleteCourse(routeId: string, userId: string): Promise<void> {
   await courseRepository.deleteRoute(routeId, userId);
+}
+
+/**
+ * 코스 메타데이터(제목·설명·이미지) 갱신. 리포지토리에서 본인 행만 갱신되도록 위임한다.
+ */
+export async function updateCourse(
+  supabase: SupabaseClient,
+  data: Omit<UpdateCourseParams, 'userId'>,
+  userId: string,
+): Promise<{ data: Route | null; error: Error | null }> {
+  return courseRepository.updateCourse(supabase, { ...data, userId });
 }

@@ -15,6 +15,7 @@ type CardBaseProps = {
   likeCount?: number;
   onLikeClick?: () => void;
   onPrimaryActionClick?: () => void;
+  primaryActionLabel?: string;
   onSecondaryActionClick?: () => void;
   secondaryActionDisabled?: boolean;
 };
@@ -42,10 +43,13 @@ export function Card({
   likeCount = 234,
   onLikeClick,
   onPrimaryActionClick,
+  primaryActionLabel,
   onSecondaryActionClick,
   secondaryActionDisabled = false,
 }: CardProps) {
   const showActions = type === 'my-course' || type === 'liked-course';
+  const resolvedPrimaryActionLabel =
+    primaryActionLabel ?? (type === 'my-course' ? '수정' : '상세보기');
 
   const rootClass = [
     styles.root,
@@ -126,13 +130,13 @@ export function Card({
             color="dark"
             className={styles.actionButton}
             leftIcon={
-              type === 'my-course' ? (
+              type === 'my-course' && resolvedPrimaryActionLabel === '수정' ? (
                 <Icon name="pencil" size={18} color="var(--color-black-300)" strokeWidth={1.75} />
               ) : undefined
             }
             onClick={onPrimaryActionClick}
           >
-            {type === 'my-course' ? '수정' : '상세보기'}
+            {resolvedPrimaryActionLabel}
           </Button>
 
           <Button

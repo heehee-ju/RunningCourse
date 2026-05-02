@@ -26,7 +26,10 @@ import Input from '@/commons/components/input';
 import { Label } from '@/commons/components/input/label';
 import Tooltip from '@/commons/components/tooltip';
 import { Header } from '@/commons/layout/header';
+import { useModal } from '@/commons/providers/modal/modal.provider';
+import CourseDetailMapPreview from '@/components/courses-detail/CourseDetailMapPreview';
 import TmapCourseSubmit from '@/components/tmap/course-submit';
+import type { CourseDetailPayload } from '@/services/course/courseDetailService';
 
 import { MAX_COURSE_SUBMIT_IMAGES, useCourseSubmit } from './hooks/useCourseSubmit';
 import styles from './styles.module.css';
@@ -45,29 +48,42 @@ const TEXTS = {
   PLACEHOLDER_COURSE_NAME: '코스명을 입력하세요.',
   PLACEHOLDER_DESCRIPTION: '코스에 대한 설명을 입력하세요',
   MAP_PLACEHOLDER: '[MAP]',
+  /** 코스 수정 화면 읽기 전용 지도(스크린리더) */
+  MAP_PREVIEW_LABEL: '등록된 코스 경로',
   BUTTON_NEW: '등록하기',
   BUTTON_EDIT: '수정하기',
+  CONFIRM_NEW_TITLE: '코스를 등록하시겠습니까?',
+  CONFIRM_EDIT_TITLE: '코스를 수정하시겠습니까?',
+  CONFIRM_BUTTON: '확인',
 } as const;
 
 interface CourseSubmitProps {
   mode: 'new' | 'edit';
   courseId?: string;
+  /** 수정 모드에서 서버에서 패칭한 코스 상세(편집 폼 초기값) */
+  initialData?: CourseDetailPayload;
 }
 
-export default function CourseSubmit({ mode, courseId }: CourseSubmitProps) {
+export default function CourseSubmit({ mode, courseId, initialData }: CourseSubmitProps) {
   const router = useRouter();
+  const { openModal } = useModal();
+
   const {
     courseName,
     setCourseName,
     description,
     setDescription,
+    existingImageUrls,
     images,
     handleSaveRoute,
     handleImageInputChange,
+    handleRemoveExistingImage,
     removeImageAt,
     handleSubmit,
     isSubmitEnabled,
-  } = useCourseSubmit({ mode, courseId });
+  } = useCourseSubmit({ mode, courseId, initialData });
+
+  const totalImageCount = existingImageUrls.length + images.length;
 
   const imagePreviewUrls = useMemo(() => images.map((file) => URL.createObjectURL(file)), [images]);
 
@@ -80,21 +96,38 @@ export default function CourseSubmit({ mode, courseId }: CourseSubmitProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEdit = mode === 'edit';
+  const showReadOnlyRouteMap = isEdit && initialData != null;
   const pageTitle = isEdit ? TEXTS.TITLE_EDIT : TEXTS.TITLE_NEW;
   const submitLabel = isEdit ? TEXTS.BUTTON_EDIT : TEXTS.BUTTON_NEW;
 
+  const openSubmitConfirmModal = () => {
+    openModal({
+      type: 'confirm',
+      title: isEdit ? TEXTS.CONFIRM_EDIT_TITLE : TEXTS.CONFIRM_NEW_TITLE,
+      confirmText: TEXTS.CONFIRM_BUTTON,
+      onConfirm: () => {
+        void handleSubmit();
+      },
+    });
+  };
+
   return (
     <div className={styles.container}>
-      <Header
-        title={pageTitle}
-        showRightIcon={isEdit}
-        rightIconName="pencil"
-        onLeftIconClick={() => router.back()}
-      />
+      <Header title={pageTitle} showRightIcon={false} onLeftIconClick={() => router.back()} />
 
-      {/* 지도 플레이스홀더 */}
+      {/* 지도: 신규는 편집 가능 Tmap, 수정+초기값 있음은 읽기 전용 미리보기 */}
       <div className={styles.mapArea} aria-label="지도 영역">
-        <TmapCourseSubmit onSaveRoute={handleSaveRoute} />
+        <div className={styles.mapSlot}>
+          {showReadOnlyRouteMap ? (
+            <CourseDetailMapPreview
+              key={initialData.course.id}
+              course={initialData.course}
+              mapLabel={TEXTS.MAP_PREVIEW_LABEL}
+            />
+          ) : (
+            <TmapCourseSubmit onSaveRoute={handleSaveRoute} />
+          )}
+        </div>
       </div>
 
       {/* 폼 섹션 */}
@@ -140,7 +173,7 @@ export default function CourseSubmit({ mode, courseId }: CourseSubmitProps) {
           </div>
           <div className={styles.imageList}>
             {/* 이미지 추가 버튼 */}
-            {images.length < MAX_COURSE_SUBMIT_IMAGES && (
+            {totalImageCount < MAX_COURSE_SUBMIT_IMAGES && (
               <button
                 type="button"
                 className={styles.addImageButton}
@@ -151,7 +184,7 @@ export default function CourseSubmit({ mode, courseId }: CourseSubmitProps) {
                   <Icon name="plus" size={12} color="var(--color-white-500)" />
                 </span>
                 <span className={styles.addImageCount}>
-                  {images.length}/{MAX_COURSE_SUBMIT_IMAGES}
+                  {totalImageCount}/{MAX_COURSE_SUBMIT_IMAGES}
                 </span>
               </button>
             )}
@@ -164,7 +197,29 @@ export default function CourseSubmit({ mode, courseId }: CourseSubmitProps) {
               onChange={handleImageInputChange}
               aria-hidden="true"
             />
-            {/* 업로드된 이미지 목록 */}
+            {/* 서버에 저장된 기존 이미지 (수정 모드) */}
+            {existingImageUrls.map((url, idx) => (
+              <div key={`existing-${url}-${idx}`} className={styles.imageItem}>
+                {/* 외부 스토리지 URL — Next/Image 도메인 설정 없이 표시 */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={url}
+                  alt={`등록된 이미지 ${idx + 1}`}
+                  className={styles.imageThumb}
+                  width={80}
+                  height={80}
+                />
+                <button
+                  type="button"
+                  className={styles.deleteImageButton}
+                  onClick={() => handleRemoveExistingImage(idx)}
+                  aria-label={`등록된 이미지 ${idx + 1} 삭제`}
+                >
+                  <Icon name="minus" size={12} color="var(--color-white-500)" />
+                </button>
+              </div>
+            ))}
+            {/* 새로 선택한 이미지 목록 */}
             {imagePreviewUrls.map((src, idx) => (
               <div key={`${src}-${idx}`} className={styles.imageItem}>
                 <Image
@@ -196,7 +251,7 @@ export default function CourseSubmit({ mode, courseId }: CourseSubmitProps) {
             color="dark"
             disabled={!isSubmitEnabled}
             className={styles.submitButton}
-            onClick={() => void handleSubmit()}
+            onClick={openSubmitConfirmModal}
           >
             {submitLabel}
           </Button>
