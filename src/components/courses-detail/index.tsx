@@ -13,7 +13,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { A11y, Navigation } from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/react';
+
+import 'swiper/css';
+import 'swiper/css/navigation';
 
 import { Icon } from '@/commons/components/icons';
 import { Header } from '@/commons/layout/header';
@@ -49,12 +54,14 @@ export function Courses({ course, authorNickname, location }: CoursesDetailProps
   const { isCourseLiked, getCourseLikeCount, toggleCourseLike } = useCourseLikes(courseLikeCounts);
   const isLiked = isCourseLiked(course.id);
   const likesCount = getCourseLikeCount(course.id);
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const descriptionText = course.description?.trim() || '설명이 없습니다.';
   const imageUrls = course.image_urls.filter((url) => url.trim().length > 0);
   const hasImages = imageUrls.length > 0;
-  const carouselLabels = hasImages
-    ? imageUrls.map((_, idx) => `코스 이미지 ${idx + 1}`)
-    : Array.from({ length: 3 }, (_, idx) => `코스 이미지 ${idx + 1}`);
+  const carouselLabels = imageUrls.map((_, idx) => `코스 이미지 ${idx + 1}`);
+  const safeCourseClassToken = course.id.replace(/[^a-zA-Z0-9_-]/g, '-');
+  const nextButtonClass = `course-detail-next-${safeCourseClassToken}`;
+  const prevButtonClass = `course-detail-prev-${safeCourseClassToken}`;
 
   return (
     <main className={styles.container}>
@@ -121,45 +128,50 @@ export function Courses({ course, authorNickname, location }: CoursesDetailProps
             {hasImages ? (
               <div className={styles.carousel}>
                 <div className={styles.carouselViewport}>
-                  <div className={styles.carouselTrack} aria-label="코스 이미지 캐러셀">
+                  <Swiper
+                    className={styles.carouselTrack}
+                    modules={[Navigation, A11y]}
+                    spaceBetween={0}
+                    slidesPerView={1}
+                    navigation={{
+                      prevEl: `.${prevButtonClass}`,
+                      nextEl: `.${nextButtonClass}`,
+                    }}
+                    onSlideChange={(swiper) => setActiveSlideIndex(swiper.realIndex)}
+                    aria-label="코스 이미지 캐러셀"
+                  >
                     {carouselLabels.map((imageLabel, index) => {
-                      const imageClassName = [
-                        styles.carouselItem,
-                        index === 0 ? styles.carouselItemPrimary : styles.carouselItemSecondary,
-                      ]
-                        .filter(Boolean)
-                        .join(' ');
-
                       return (
-                        <figure
-                          key={imageLabel}
-                          className={imageClassName}
-                          aria-label={`${COPY.imageAltPrefix} ${index + 1}`}
-                        >
-                          {/* 상세 코스 이미지는 외부 URL을 그대로 표시한다. */}
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={imageUrls[index]}
-                            alt={`${COPY.imageAltPrefix} ${index + 1}`}
-                            className={styles.carouselImage}
-                          />
-                          <span className={styles.carouselCaption}>{imageLabel}</span>
-                        </figure>
+                        <SwiperSlide key={imageLabel} className={styles.carouselSlide}>
+                          <figure
+                            className={styles.carouselItem}
+                            aria-label={`${COPY.imageAltPrefix} ${index + 1}`}
+                          >
+                            {/* 상세 코스 이미지는 외부 URL을 그대로 표시한다. */}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={imageUrls[index]}
+                              alt={`${COPY.imageAltPrefix} ${index + 1}`}
+                              className={styles.carouselImage}
+                            />
+                            <span className={styles.carouselCaption}>{imageLabel}</span>
+                          </figure>
+                        </SwiperSlide>
                       );
                     })}
-                  </div>
+                  </Swiper>
 
                   <div className={styles.carouselControls}>
                     <button
                       type="button"
-                      className={styles.carouselButton}
+                      className={`${styles.carouselButton} ${prevButtonClass}`}
                       aria-label={COPY.previousImage}
                     >
                       <Icon name="chevronLeft" size={16} color="var(--color-black-900)" />
                     </button>
                     <button
                       type="button"
-                      className={styles.carouselButton}
+                      className={`${styles.carouselButton} ${nextButtonClass}`}
                       aria-label={COPY.nextImage}
                     >
                       <Icon name="chevronRight" size={16} color="var(--color-black-900)" />
@@ -167,9 +179,15 @@ export function Courses({ course, authorNickname, location }: CoursesDetailProps
                   </div>
 
                   <div className={styles.carouselIndicators} aria-label="이미지 위치 표시">
-                    <span className={styles.indicatorActive} aria-hidden />
-                    <span className={styles.indicator} aria-hidden />
-                    <span className={styles.indicator} aria-hidden />
+                    {imageUrls.map((_, index) => (
+                      <span
+                        key={`indicator-${index + 1}`}
+                        className={
+                          index === activeSlideIndex ? styles.indicatorActive : styles.indicator
+                        }
+                        aria-hidden
+                      />
+                    ))}
                   </div>
                 </div>
               </div>

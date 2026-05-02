@@ -1,11 +1,7 @@
 import { useCallback, useRef } from 'react';
 
 import type { TmapCoordinate, TmapMapLike, TmapMarkerLike, TmapV3 } from '@/commons/types/tmap';
-import {
-  buildWaypointMarkerIconUrl,
-  getWaypointMarkerTitle,
-  WAYPOINT_MARKER_ICON_SIZE,
-} from '@/components/tmap/shared/build-waypoint-marker-icon';
+import { getWaypointMarkerIconUrl } from '@/components/tmap/shared/build-waypoint-marker-icon';
 
 import type { RefObject } from 'react';
 
@@ -32,17 +28,12 @@ export function useTmapOverlays(mapRef: RefObject<TmapMapLike | null>) {
         const isStart = index === 0;
         const isEnd = nextPoints.length >= 2 && index === nextPoints.length - 1;
         const role: MarkerRole = isStart ? 'start' : isEnd ? 'end' : 'via';
-        const label = isStart ? 'S' : isEnd ? 'E' : String(index);
 
         const marker = new Tmapv3.Marker({
+          // Tmap 공식 예제와 동일하게 LatLng(lat, lon) 순서로 변환한다.
           position: new Tmapv3.LatLng(point.lat, point.lng),
+          icon: getWaypointMarkerIconUrl(role),
           map,
-          title: getWaypointMarkerTitle(role),
-          icon: buildWaypointMarkerIconUrl(role, label),
-          iconSize: new Tmapv3.Size(
-            WAYPOINT_MARKER_ICON_SIZE.width,
-            WAYPOINT_MARKER_ICON_SIZE.height,
-          ),
         });
         markerRefs.current.push(marker);
       });

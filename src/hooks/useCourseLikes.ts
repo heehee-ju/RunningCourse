@@ -113,7 +113,15 @@ export function useCourseLikes(initialLikeCounts: LikeCountsByCourseId) {
       setOptimisticLikeCounts((previous) => ({ ...previous, [courseId]: nextCount }));
 
       const result = await setCourseLike(user.id, courseId, shouldLike);
-      if (!result.error) return;
+      if (!result.error) {
+        if (typeof result.likeCount === 'number') {
+          setOptimisticLikeCounts((previous) => ({
+            ...previous,
+            [courseId]: result.likeCount ?? nextCount,
+          }));
+        }
+        return;
+      }
 
       console.error('[useCourseLikes] 찜 상태 변경 실패:', result.error);
       setLikedCourseIds((previous) => {

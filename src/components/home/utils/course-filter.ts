@@ -8,7 +8,8 @@ import {
 export type DistanceCategory = 'UNDER_3' | 'BETWEEN_3_AND_5' | 'BETWEEN_5_AND_10' | 'OVER_10';
 export const SEOUL_CITY_HALL_REFERENCE = DEFAULT_REFERENCE;
 
-// [분류] 거리값을 탭 카테고리로 변환
+// [분류] 거리값을 탭·지도 마커 카테고리로 변환 (홈 탭 라벨과 동일 구간)
+// ~3km(m≤3) → blue · 3~5km → green · 5~10km → red · 10km~(m>10km) → orange
 export function getDistanceCategory(distanceMeters: number): DistanceCategory {
   const distanceKm = distanceMeters / 1000;
 

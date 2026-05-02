@@ -4,17 +4,29 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Icon } from '@/commons/components/icons';
 import type { Route, RouteViewport } from '@/commons/types/runroute';
-import { hasValidRouteStartCoordinate, SEOUL_CITY_HALL_COORDINATE } from '@/commons/utils/geo';
+import { SEOUL_CITY_HALL_COORDINATE } from '@/commons/utils/geo';
+import { resolveRouteStartForMapMarker } from '@/commons/utils/route-marker-position';
 import { getDistanceCategory, type DistanceCategory } from '@/components/home/utils/course-filter';
 import { applyPointerCursorToTmapMarker } from '@/components/tmap/shared/apply-pointer-cursor-to-tmap-marker';
 
 import {
   getRunningCourseMarkerIconUrlForCategory,
-  ROUTE_MARKER_ICON_ANCHOR,
-  ROUTE_MARKER_ICON_PIXEL_SIZE,
   type MarkerVisualState,
 } from './build-running-course-marker-icon';
 import styles from './styles.module.css';
+
+/** 줌 시 마커 위경도 디버그 로그. 끄기: `localStorage.DEBUG_TMAP_MARKERS=0` · 항상 켜기: `=1` */
+function isMarkerCoordDebugEnabled(): boolean {
+  if (typeof window === 'undefined') return false;
+  const flag = window.localStorage?.getItem('DEBUG_TMAP_MARKERS');
+  if (flag === '0') return false;
+  if (flag === '1') return true;
+  return process.env.NODE_ENV === 'development';
+}
+
+function roundCoordForLog(n: number): number {
+  return Math.round(n * 1e8) / 1e8;
+}
 
 type TmapV3API = {
   Map: new (id: string, options: Record<string, unknown>) => TmapMap;
@@ -55,6 +67,8 @@ type TmapMarker = {
   addListener?: (eventName: string, callback: () => void) => void;
   on?: (eventName: string, callback: () => void) => void;
   getElement?: () => HTMLElement | null;
+  /** 일부 Tmap SDK 버전에서 마커 인스턴스의 현재 위경도 조회용 */
+  getPosition?: () => TmapLatLng;
 };
 
 type TmapPolyline = {
@@ -116,9 +130,7 @@ const PRECISE_GEOLOCATION_OPTIONS: PositionOptions = {
 
 const MIN_ZOOM_LEVEL = 11;
 const MAX_ZOOM_LEVEL = 19;
-const VIEWPORT_PADDING_RATIO = 0.1;
 const MARKER_VISIBILITY_DEBOUNCE_MS = 140;
-const MARKER_VISIBILITY_HIDE_GRACE_MS = 260;
 
 function escapeHtml(value: string): string {
   return value
@@ -235,7 +247,20 @@ export function TmapHome({
   );
   const selectedMarkerVisualHandlerRef = useRef<(courseId: string | null) => void>(() => undefined);
   const selectedPolylineHandlerRef = useRef<(courseId: string | null) => void>(() => undefined);
-  const lastCenteredCourseIdRef = useRef<string | null>(null);
+  const markerHoverCountRef = useRef(0);
+
+  const setMarkerHoverCursor = useCallback((isHover: boolean) => {
+    const rootElement = rootRef.current;
+    if (!rootElement) return;
+
+    if (isHover) {
+      markerHoverCountRef.current += 1;
+    } else {
+      markerHoverCountRef.current = Math.max(0, markerHoverCountRef.current - 1);
+    }
+
+    rootElement.classList.toggle(styles.mapMarkerHover, markerHoverCountRef.current > 0);
+  }, []);
 
   const readCoordinateValue = (
     point: TmapLatLng | undefined,
@@ -252,6 +277,67 @@ export function TmapHome({
       axis === 'lat' ? (point._lat ?? point.latValue) : (point._lng ?? point.lngValue);
     return typeof fallback === 'number' ? fallback : null;
   };
+
+  const tryReadSdkLatLngFromMarker = useCallback((marker: TmapMarker) => {
+    if (typeof marker.getPosition !== 'function') return null;
+    try {
+      const point = marker.getPosition();
+      const lat = readCoordinateValue(point, 'lat');
+      const lng = readCoordinateValue(point, 'lng');
+      if (lat !== null && lng !== null) return { lat, lng };
+    } catch {
+      /* SDK 버전별 미구현 */
+    }
+    return null;
+  }, []);
+
+  const logMarkerCoordinateAudit = useCallback(
+    (map: TmapMap, phase: string) => {
+      if (!isMarkerCoordDebugEnabled()) return;
+      const zoom = typeof map.getZoom === 'function' ? map.getZoom() : Number.NaN;
+      const selectedId = selectedRouteIdRef.current;
+      const rows: Array<Record<string, string | number | boolean | null>> = [];
+      let mismatch = 0;
+      let noSdkReader = 0;
+
+      routeMarkerMapRef.current.forEach((entry, routeId) => {
+        const sdk = tryReadSdkLatLngFromMarker(entry.marker);
+        if (!sdk) noSdkReader += 1;
+        const dLat = sdk ? sdk.lat - entry.lat : null;
+        const dLng = sdk ? sdk.lng - entry.lng : null;
+        const coordsOk =
+          sdk !== null &&
+          dLat !== null &&
+          dLng !== null &&
+          Math.abs(dLat) < 1e-9 &&
+          Math.abs(dLng) < 1e-9;
+        if (!coordsOk) mismatch += 1;
+        rows.push({
+          routeId: `${routeId.slice(0, 10)}…`,
+          sel: routeId === selectedId,
+          visible: entry.isVisible,
+          storedLat: roundCoordForLog(entry.lat),
+          storedLng: roundCoordForLog(entry.lng),
+          sdkLat: sdk ? roundCoordForLog(sdk.lat) : null,
+          sdkLng: sdk ? roundCoordForLog(sdk.lng) : null,
+          dLat: dLat !== null ? roundCoordForLog(dLat) : null,
+          dLng: dLng !== null ? roundCoordForLog(dLng) : null,
+        });
+      });
+
+      /* eslint-disable no-console -- DEBUG_TMAP_MARKERS / 개발 모드 마커 좌표 불변 검사 */
+      console.groupCollapsed(
+        `[TmapHome] marker-debug · ${phase} · zoom=${String(zoom)} · mismatch=${mismatch}/${rows.length} · noGetPosition=${noSdkReader}`,
+      );
+      console.table(rows);
+      console.log(
+        '해석: stored* = 앱이 route에 넣은 값, sdk* = Marker.getPosition() (없으면 null). d가 0이면 위경도 숫자는 안 바뀐 것. 여전히 화면에서 밀리면 앵커/투영/CSS 이슈.',
+      );
+      console.groupEnd();
+      /* eslint-enable no-console */
+    },
+    [tryReadSdkLatLngFromMarker],
+  );
 
   const normalizeViewportFromMap = useCallback((map: TmapMap): RouteViewport | null => {
     const bounds = map.getBounds?.();
@@ -300,59 +386,14 @@ export function TmapHome({
     [normalizeViewportFromMap, onViewportChanged],
   );
 
-  const syncMarkerVisibilityByViewport = useCallback(
-    (map: TmapMap) => {
-      const viewport = normalizeViewportFromMap(map);
-      if (!viewport) return;
-      const nowMs = window.performance.now();
-      const west = Math.min(viewport.southWestLng, viewport.northEastLng);
-      const east = Math.max(viewport.southWestLng, viewport.northEastLng);
-      const south = Math.min(viewport.southWestLat, viewport.northEastLat);
-      const north = Math.max(viewport.southWestLat, viewport.northEastLat);
-      const lngPadding = (east - west) * VIEWPORT_PADDING_RATIO;
-      const latPadding = (north - south) * VIEWPORT_PADDING_RATIO;
-      const paddedWest = west - lngPadding;
-      const paddedEast = east + lngPadding;
-      const paddedSouth = south - latPadding;
-      const paddedNorth = north + latPadding;
-      const isLngInRange = (lng: number) => lng >= paddedWest && lng <= paddedEast;
-
-      routeMarkerMapRef.current.forEach((entry, routeId) => {
-        const isInViewport =
-          entry.lat >= paddedSouth && entry.lat <= paddedNorth && isLngInRange(entry.lng);
-        const isSelected = selectedRouteIdRef.current === routeId;
-
-        // 뷰포트 경계에서 bounds/좌표가 미세하게 흔들리면 isInViewport가
-        // true/false로 튀면서 마커가 깜빡일 수 있다.
-        // 그래서 "경계 밖"이 일정 시간 이상 유지될 때만 숨긴다.
-        if (isSelected || isInViewport) {
-          entry.outOfViewportSinceMs = null;
-          if (!entry.isVisible) {
-            entry.marker.setMap(map);
-            entry.isVisible = true;
-          }
-          return;
-        }
-
-        if (!entry.isVisible) {
-          if (entry.outOfViewportSinceMs === null) entry.outOfViewportSinceMs = nowMs;
-          return;
-        }
-
-        if (entry.outOfViewportSinceMs === null) {
-          entry.outOfViewportSinceMs = nowMs;
-          return;
-        }
-
-        if (nowMs - entry.outOfViewportSinceMs < MARKER_VISIBILITY_HIDE_GRACE_MS) return;
-
-        entry.marker.setMap(null);
-        entry.isVisible = false;
-        entry.outOfViewportSinceMs = null;
-      });
-    },
-    [normalizeViewportFromMap],
-  );
+  const syncMarkerVisibilityByViewport = useCallback((map: TmapMap) => {
+    // 공식 예제와 동일하게 마커는 지도 인스턴스에 직접 attach 상태를 유지한다.
+    routeMarkerMapRef.current.forEach((entry) => {
+      entry.marker.setMap(map);
+      entry.isVisible = true;
+      entry.outOfViewportSinceMs = null;
+    });
+  }, []);
 
   const scheduleMarkerVisibilitySync = useCallback(
     (map: TmapMap) => {
@@ -415,7 +456,6 @@ export function TmapHome({
     };
     if (Tmapv3.Point) {
       markerOptions.iconAnchor = new Tmapv3.Point(indicatorSize / 2, indicatorSize / 2);
-      markerOptions.offset = new Tmapv3.Point(indicatorSize / 2, indicatorSize / 2);
     }
 
     // 줌 레벨에 따라 아이콘 크기가 달라지므로 현재 위치 마커는 갱신 시 재생성한다.
@@ -434,7 +474,8 @@ export function TmapHome({
     }
 
     const route = routesRef.current.find((item) => item.id === courseId);
-    if (!route || !hasValidRouteStartCoordinate(route)) {
+    const routeStart = route ? resolveRouteStartForMapMarker(route) : null;
+    if (!route || !routeStart) {
       selectedLabelMarkerRef.current?.setMap(null);
       return;
     }
@@ -443,7 +484,7 @@ export function TmapHome({
     const { width, height } = getLabelIconSize(route.title, zoomLevel);
     const labelIconHeight = height + Math.round(40 * getLabelScaleByZoom(zoomLevel));
     const icon = buildMarkerLabelIconUrl(route.title, width, height, zoomLevel);
-    const position = new Tmapv3.LatLng(route.start_lat, route.start_lng);
+    const position = new Tmapv3.LatLng(routeStart.lat, routeStart.lng);
     const options: Record<string, unknown> = {
       position,
       map,
@@ -452,7 +493,6 @@ export function TmapHome({
     };
     if (Tmapv3.Point) {
       options.iconAnchor = new Tmapv3.Point(width / 2, labelIconHeight);
-      options.offset = new Tmapv3.Point(width / 2, labelIconHeight);
     }
 
     // SDK 내부 상태(null screenSize) 충돌을 피하기 위해 라벨 마커는 갱신 시 재생성한다.
@@ -517,6 +557,7 @@ export function TmapHome({
         if (currentZoom === lastAppliedZoomRef.current) {
           scheduleMarkerVisibilitySync(map);
           scheduleViewportReport(map);
+          logMarkerCoordinateAudit(map, 'zoomEnd_sameZoomLevel');
           return;
         }
         lastAppliedZoomRef.current = currentZoom;
@@ -530,6 +571,7 @@ export function TmapHome({
           }
           scheduleMarkerVisibilitySync(map);
           scheduleViewportReport(map);
+          logMarkerCoordinateAudit(map, 'zoomEnd_afterRaf');
         });
       };
 
@@ -564,6 +606,7 @@ export function TmapHome({
     [
       enforceMinZoomLevel,
       isMapInteractingRef,
+      logMarkerCoordinateAudit,
       scheduleMarkerVisibilitySync,
       scheduleViewportReport,
       upsertSelectedLabelMarker,
@@ -592,6 +635,26 @@ export function TmapHome({
     [],
   );
 
+  const bindMarkerDomHoverFallback = useCallback(
+    (marker: TmapMarker, routeId: string) => {
+      const rootElement = marker.getElement?.();
+      if (!(rootElement instanceof HTMLElement)) return;
+
+      // SDK hover 이벤트가 누락되는 런타임 대비: DOM mouseenter/leave로 커서 상태를 보강한다.
+      rootElement.addEventListener('mouseenter', () => {
+        setMarkerHoverCursor(true);
+        if (selectedRouteIdRef.current === routeId) return;
+        routeVisualStateHandlerRef.current(routeId, 'hover');
+      });
+      rootElement.addEventListener('mouseleave', () => {
+        setMarkerHoverCursor(false);
+        if (selectedRouteIdRef.current === routeId) return;
+        routeVisualStateHandlerRef.current(routeId, 'default');
+      });
+    },
+    [setMarkerHoverCursor],
+  );
+
   const createRouteMarker = useCallback(
     (
       map: TmapMap,
@@ -600,45 +663,43 @@ export function TmapHome({
       visualState: MarkerVisualState,
     ): TmapMarker | null => {
       const Tmapv3 = getTmapv3();
-      if (!Tmapv3 || !hasValidRouteStartCoordinate(route)) return null;
+      const routeStart = resolveRouteStartForMapMarker(route);
+      if (!Tmapv3 || !routeStart) return null;
 
       const markerOptions: Record<string, unknown> = {
-        position: new Tmapv3.LatLng(route.start_lat, route.start_lng),
-        map,
-        title: '',
-        label: '',
+        position: new Tmapv3.LatLng(routeStart.lat, routeStart.lng),
         icon: getRunningCourseMarkerIconUrlForCategory(category, visualState),
-        iconSize: new Tmapv3.Size(
-          ROUTE_MARKER_ICON_PIXEL_SIZE.width,
-          ROUTE_MARKER_ICON_PIXEL_SIZE.height,
-        ),
+        map,
       };
-      if (Tmapv3.Point) {
-        markerOptions.iconAnchor = new Tmapv3.Point(
-          ROUTE_MARKER_ICON_ANCHOR.x,
-          ROUTE_MARKER_ICON_ANCHOR.y,
-        );
-        markerOptions.offset = new Tmapv3.Point(
-          ROUTE_MARKER_ICON_ANCHOR.x,
-          ROUTE_MARKER_ICON_ANCHOR.y,
-        );
-      }
 
-      const routeMarker = new Tmapv3.Marker(markerOptions);
+      const routeMarker = new Tmapv3.Marker(markerOptions) as TmapMarker;
       applyPointerCursorToTmapMarker(routeMarker);
+      if (isMarkerCoordDebugEnabled()) {
+        const sdkAfterCreate = tryReadSdkLatLngFromMarker(routeMarker);
+        /* eslint-disable-next-line no-console -- 마커 생성 직후 좌표 스냅샷 */
+        console.log('[TmapHome:createRouteMarker]', {
+          routeId: route.id,
+          positionInput: { lat: routeStart.lat, lng: routeStart.lng },
+          icon: getRunningCourseMarkerIconUrlForCategory(category, visualState),
+          visualState,
+          sdkGetPositionAfterCreate: sdkAfterCreate,
+        });
+      }
       return routeMarker;
     },
-    [],
+    [tryReadSdkLatLngFromMarker],
   );
 
   const attachRouteMarkerListeners = useCallback(
     (marker: TmapMarker, routeId: string) => {
       addMarkerListener(marker, 'mouseover', () => {
+        setMarkerHoverCursor(true);
         if (selectedRouteIdRef.current === routeId) return;
         routeVisualStateHandlerRef.current(routeId, 'hover');
       });
 
       addMarkerListener(marker, 'mouseout', () => {
+        setMarkerHoverCursor(false);
         if (selectedRouteIdRef.current === routeId) return;
         routeVisualStateHandlerRef.current(routeId, 'default');
       });
@@ -648,8 +709,10 @@ export function TmapHome({
         selectedPolylineHandlerRef.current(routeId);
         onCourseMarkerClick?.(routeId);
       });
+
+      bindMarkerDomHoverFallback(marker, routeId);
     },
-    [addMarkerListener, onCourseMarkerClick],
+    [addMarkerListener, bindMarkerDomHoverFallback, onCourseMarkerClick, setMarkerHoverCursor],
   );
 
   const setRouteMarkerVisualState = useCallback(
@@ -661,13 +724,13 @@ export function TmapHome({
       const icon = getRunningCourseMarkerIconUrlForCategory(markerEntry.category, state);
       if (typeof markerEntry.marker.setIcon === 'function') {
         markerEntry.marker.setIcon(icon);
-        applyPointerCursorToTmapMarker(markerEntry.marker);
         return;
       }
 
       const map = mapInstance.current;
       const route = routesRef.current.find((item) => item.id === courseId);
-      if (!map || !route || !hasValidRouteStartCoordinate(route)) return;
+      const routeStart = route ? resolveRouteStartForMapMarker(route) : null;
+      if (!map || !route || !routeStart) return;
 
       const nextMarker = createRouteMarker(map, route, markerEntry.category, state);
       if (!nextMarker) return;
@@ -713,6 +776,13 @@ export function TmapHome({
     });
   }, [setRouteMarkerLabelVisible]);
 
+  const clearRouteMarkers = useCallback(() => {
+    routeMarkerMapRef.current.forEach((entry) => {
+      entry.marker.setMap(null);
+    });
+    routeMarkerMapRef.current.clear();
+  }, []);
+
   const syncSelectedMarkerVisual = useCallback(
     (nextSelectedCourseId: string | null) => {
       const previousSelectedId = selectedRouteIdRef.current;
@@ -742,63 +812,46 @@ export function TmapHome({
 
   const syncRouteMarkers = useCallback(
     (map: TmapMap, nextRoutes: Route[]) => {
-      // [동기화] 코스 마커 목록 증분 동기화
-      const Tmapv3 = getTmapv3();
-      if (!Tmapv3) return;
+      // [동기화] 공식 예제 패턴에 맞춰 매번 clear 후 Marker 재생성
+      const normalizedRoutes = nextRoutes
+        .map((route) => ({
+          route,
+          start: resolveRouteStartForMapMarker(route),
+        }))
+        .filter(
+          (item): item is { route: Route; start: { lat: number; lng: number } } =>
+            item.start !== null,
+        );
+      clearRouteMarkers();
 
-      const normalizedRoutes = nextRoutes.filter(hasValidRouteStartCoordinate);
-      const nextRouteIds = new Set(normalizedRoutes.map((route) => route.id));
+      const nextRouteIds = new Set(normalizedRoutes.map(({ route }) => route.id));
+      if (selectedRouteIdRef.current && !nextRouteIds.has(selectedRouteIdRef.current)) {
+        selectedRouteIdRef.current = null;
+      }
 
-      routeMarkerMapRef.current.forEach((markerEntry, routeId) => {
-        if (!nextRouteIds.has(routeId)) {
-          markerEntry.marker.setMap(null);
-          routeMarkerMapRef.current.delete(routeId);
-          if (selectedRouteIdRef.current === routeId) {
-            selectedRouteIdRef.current = null;
-          }
-        }
-      });
-
-      normalizedRoutes.forEach((route) => {
+      normalizedRoutes.forEach(({ route, start }) => {
         const category = getRouteDistanceCategory(route);
-        const existingMarker = routeMarkerMapRef.current.get(route.id);
-        if (existingMarker) {
-          existingMarker.category = category;
-          existingMarker.title = route.title;
-          existingMarker.lat = route.start_lat;
-          existingMarker.lng = route.start_lng;
-          existingMarker.outOfViewportSinceMs = null;
-          existingMarker.marker.setPosition(new Tmapv3.LatLng(route.start_lat, route.start_lng));
-          const state: MarkerVisualState =
-            selectedRouteIdRef.current === route.id ? 'clicked' : 'default';
-          setRouteMarkerVisualState(route.id, state);
-          setRouteMarkerLabelVisible(route.id, selectedRouteIdRef.current === route.id);
-          return;
-        }
-
-        const marker = createRouteMarker(map, route, category, 'default');
+        const state: MarkerVisualState =
+          selectedRouteIdRef.current === route.id ? 'clicked' : 'default';
+        const marker = createRouteMarker(map, route, category, state);
         if (!marker) return;
+
         routeMarkerMapRef.current.set(route.id, {
           marker,
           category,
           title: route.title,
-          visualState: 'default',
-          lat: route.start_lat,
-          lng: route.start_lng,
+          visualState: state,
+          lat: start.lat,
+          lng: start.lng,
           isVisible: true,
           outOfViewportSinceMs: null,
         });
 
-        // 신규 생성 시 반드시 클릭 리스너를 바인딩한다.
         attachRouteMarkerListeners(marker, route.id);
+        setRouteMarkerLabelVisible(route.id, selectedRouteIdRef.current === route.id);
       });
     },
-    [
-      attachRouteMarkerListeners,
-      createRouteMarker,
-      setRouteMarkerLabelVisible,
-      setRouteMarkerVisualState,
-    ],
+    [attachRouteMarkerListeners, clearRouteMarkers, createRouteMarker, setRouteMarkerLabelVisible],
   );
 
   // [이벤트] 현재 위치 재탐색 버튼 처리
@@ -953,6 +1006,7 @@ export function TmapHome({
       selectedLabelMarkerRef.current = null;
       selectedRoutePolylineRef.current = null;
       selectedRouteIdRef.current = null;
+      markerHoverCountRef.current = 0;
       mapListenersRegisteredRef.current = false;
       isMapInteractingRef.current = false;
       if (interactionWatchdogTimerRef.current !== null) {
@@ -1001,24 +1055,6 @@ export function TmapHome({
     // [동기화] 외부 선택 상태(selectedCourseId)와 마커 clicked 상태 정합성 유지
     syncSelectedMarkerVisual(selectedCourseId);
   }, [selectedCourseId, syncSelectedMarkerVisual]);
-
-  useEffect(() => {
-    // [동기화] 선택된 코스가 바뀌면 해당 시작 좌표로 지도 중심 이동
-    if (!selectedCourseId) {
-      lastCenteredCourseIdRef.current = null;
-      return;
-    }
-    if (lastCenteredCourseIdRef.current === selectedCourseId) return;
-    const map = mapInstance.current;
-    const Tmapv3 = getTmapv3();
-    if (!map || !Tmapv3) return;
-
-    const selectedRoute = routes.find((route) => route.id === selectedCourseId);
-    if (!selectedRoute || !hasValidRouteStartCoordinate(selectedRoute)) return;
-
-    map.setCenter(new Tmapv3.LatLng(selectedRoute.start_lat, selectedRoute.start_lng));
-    lastCenteredCourseIdRef.current = selectedCourseId;
-  }, [routes, selectedCourseId]);
 
   useEffect(() => {
     return () => {

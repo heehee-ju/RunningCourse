@@ -182,6 +182,12 @@
   gap: 8px;
   padding-top: 8px;
   overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.imageList::-webkit-scrollbar {
+  display: none;
 }
 
 .addImageButton {
