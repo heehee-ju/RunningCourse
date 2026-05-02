@@ -1,5 +1,11 @@
 /**
  * 티맵 공식 Marker 옵션 패턴 유지: `icon` 은 프로젝트 `public/icons/*.png` 루트 경로 문자열.
+ *
+ * 홈 지도 마커 색 ↔ 거리 구간 (`getDistanceCategory` 와 동일):
+ * - marker_blue   · ~3km   · UNDER_3
+ * - marker_green  · 3~5km  · BETWEEN_3_AND_5
+ * - marker_red    · 5~10km · BETWEEN_5_AND_10
+ * - marker_orange · 10km~  · OVER_10
  */
 import type { DistanceCategory } from '@/components/home/utils/course-filter';
 
