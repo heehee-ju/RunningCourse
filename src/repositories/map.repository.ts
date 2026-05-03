@@ -81,8 +81,9 @@ export type PedestrianRouteResult = {
   path: TmapCoordinate[];
 };
 
-function buildPassList(points: TmapCoordinate[]): string {
-  if (points.length <= 2) return '';
+/** 경유지가 있을 때만 반환. 빈 문자열을 넣으면 Tmap API가 400/1100(요청 데이터 오류)을 반환한다. */
+function buildPassList(points: TmapCoordinate[]): string | undefined {
+  if (points.length <= 2) return undefined;
   return points
     .slice(1, -1)
     .map((point) => `${point.lng},${point.lat}`)
@@ -121,23 +122,28 @@ export async function getPedestrianRoute(
   const start = points[0];
   const end = points[points.length - 1];
 
+  const passList = buildPassList(points);
+  const requestBody: Record<string, string | number> = {
+    startX: start.lng,
+    startY: start.lat,
+    endX: end.lng,
+    endY: end.lat,
+    reqCoordType: 'WGS84GEO',
+    resCoordType: 'WGS84GEO',
+    startName: '출발지',
+    endName: '도착지',
+  };
+  if (passList) {
+    requestBody.passList = passList;
+  }
+
   const response = await fetch(TMAP_PEDESTRIAN_ROUTE_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       appKey,
     },
-    body: JSON.stringify({
-      startX: start.lng,
-      startY: start.lat,
-      endX: end.lng,
-      endY: end.lat,
-      passList: buildPassList(points),
-      reqCoordType: 'WGS84GEO',
-      resCoordType: 'WGS84GEO',
-      startName: '출발지',
-      endName: '도착지',
-    }),
+    body: JSON.stringify(requestBody),
     cache: 'no-store',
     signal,
   });
