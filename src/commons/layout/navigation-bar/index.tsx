@@ -35,7 +35,7 @@ export type NavigationBarProps = {
 };
 
 const DEFAULT_ITEMS: NavigationBarLink[] = [
-  { href: '/', label: COPY.home, icon: 'house' },
+  { href: '/', label: COPY.home, icon: 'map' },
   { href: '/courses/new', label: COPY.courseRegister, icon: 'squarePlus' },
   { href: '/mypage', label: COPY.myPage, icon: 'userRound' },
 ];
