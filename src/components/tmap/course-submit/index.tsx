@@ -31,7 +31,6 @@ export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) 
     isPointLimitReached,
     initializeMap,
     undo,
-    reset,
     saveRoute,
   } = useCourseMap({ onSaveRoute });
 
@@ -90,17 +89,6 @@ export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) 
           disabled={points.length === 0}
         >
           되돌리기
-        </Button>
-        <Button
-          variant="outline"
-          borderRadius="r12"
-          size="small"
-          color="dark"
-          leftIcon={<Icon name="rotateCcw" size={16} />}
-          onClick={reset}
-          disabled={points.length === 0}
-        >
-          초기화
         </Button>
       </div>
 

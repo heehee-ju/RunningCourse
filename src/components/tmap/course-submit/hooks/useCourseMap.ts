@@ -36,7 +36,7 @@ export function useCourseMap({ onSaveRoute }: UseCourseMapParams = {}) {
     mapRef.current = map;
   }, []);
 
-  const { clearMarkers, clearPolyline, drawPointMarkers, drawRoutePolyline } =
+  const { clearPolyline, drawPointMarkers, drawRoutePolyline } =
     useTmapOverlays(mapRef);
 
   const { initializeMap } = useTmapMapInitialization({
@@ -73,14 +73,6 @@ export function useCourseMap({ onSaveRoute }: UseCourseMapParams = {}) {
     setDistanceKm(null);
     clearPolyline();
   }, [clearPolyline, drawPointMarkers]);
-
-  const reset = useCallback(() => {
-    setPoints([]);
-    setDistanceKm(null);
-    setErrorMessage(null);
-    clearMarkers();
-    clearPolyline();
-  }, [clearMarkers, clearPolyline]);
 
   const runSaveRoute = useCallback(async () => {
     if (points.length < 2) {
@@ -152,7 +144,6 @@ export function useCourseMap({ onSaveRoute }: UseCourseMapParams = {}) {
     initializeMap,
     addPoint,
     undo,
-    reset,
     saveRoute,
   };
 }
