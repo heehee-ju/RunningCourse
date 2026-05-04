@@ -187,6 +187,31 @@ export async function getLikedRoutesByUserId(
   return { data: normalizeRouteRows(routeRows), error: null };
 }
 
+/**
+ * 특정 유저가 `routes` 테이블에 작성한 코스(행)의 총 개수를 조회한다.
+ * 서버 전용 Supabase 클라이언트로 질의하며, UI·비즈니스 규칙은 포함하지 않는다.
+ */
+export async function getRouteCountByUserId(userId: string): Promise<number> {
+  // 요청·응답 쿠키를 반영하는 서버 사이드 Supabase 인스턴스를 만든다.
+  const supabase = createClient();
+  // `routes` 테이블을 대상으로 집계 쿼리를 준비한다.
+  const { count, error } = await supabase
+    .from('routes')
+    // 행 데이터는 가져오지 않고(`head: true`) 정확한 건수(`count: 'exact'`)만 요청한다.
+    .select('*', { count: 'exact', head: true })
+    // 주어진 UUID와 일치하는 작성자의 코스만 센다.
+    .eq('user_id', userId);
+
+  // Supabase/PostgREST가 에러 객체를 돌려주면 통신 실패로 본다.
+  if (error) {
+    // 메시지를 유지한 예외로 올려 서비스 계층에서 일관되게 처리하게 한다.
+    throw new Error(error.message);
+  }
+
+  // 집계가 비어 있으면 null일 수 있어, 숫자 비교에 안전한 0으로 치환한다.
+  return count ?? 0;
+}
+
 export async function deleteRoute(routeId: string, userId: string): Promise<void> {
   const supabase = createClient();
 

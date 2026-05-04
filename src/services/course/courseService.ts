@@ -149,3 +149,29 @@ export async function updateCourse(
 ): Promise<{ data: Route | null; error: Error | null }> {
   return courseRepository.updateCourse(supabase, { ...data, userId });
 }
+
+/**
+ * 유저가 작성한 코스(`routes`) 행 개수를 조회한다.
+ * 리포지토리 예외는 잡아 로깅하고, 호출부는 `error`로 실패 여부를 판단할 수 있다.
+ */
+export async function getUserRouteWriteCount(userId: string): Promise<{
+  /** 성공 시 작성 코스 개수, 실패 시 null */
+  count: number | null;
+  /** 실패 시 에러, 성공 시 null */
+  error: Error | null;
+}> {
+  // 리포지토리가 던질 수 있는 오류를 서비스에서 일괄 처리한다.
+  try {
+    // 데이터 통신(집계)은 리포지토리에만 둔다.
+    const routeCount = await courseRepository.getRouteCountByUserId(userId);
+    // 집계 성공: 유효한 숫자와 error: null을 돌려준다.
+    return { count: routeCount, error: null };
+  } catch (err) {
+    // throw된 값이 Error가 아닐 수 있어 표준 Error로 감싼다.
+    const error = err instanceof Error ? err : new Error(String(err));
+    // 디버깅·모니터링을 위해 실패 맥락을 콘솔에 남긴다.
+    console.error('[courseService] 유저 코스 작성 횟수 조회 실패:', error);
+    // 실패 시 count는 사용하지 말 것을 명시하기 위해 null을 반환한다.
+    return { count: null, error };
+  }
+}
