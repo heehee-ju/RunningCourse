@@ -9,7 +9,7 @@ import { useModal } from '@/commons/providers/modal/modal.provider';
 const MODAL_TITLE_PROFILE = '닉네임 변경은 구글 연동 후 가능합니다';
 
 /** 코스 등록 — 게스트 1회 작성 제한 안내 모달 제목 */
-const MODAL_TITLE_COURSE_ONCE = '코스는 1회만 작성 가능합니다';
+const MODAL_TITLE_COURSE_ONCE = '추가 등록은 구글 연동 후 가능합니다';
 
 /**
  * 게스트(익명) 세션과 구글 연동 완료 계정의 권한을 구분하는 가드 훅.
