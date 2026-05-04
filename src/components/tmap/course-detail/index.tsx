@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Route } from '@/commons/types/runroute';
 import type { TmapV3 } from '@/commons/types/tmap';
-import { getWaypointMarkerIconUrl } from '@/components/tmap/shared/build-waypoint-marker-icon';
+import { getWaypointMarkerIconUrl } from '@/components/tmap/utils/build-waypoint-marker-icon';
 import { getPedestrianRoute } from '@/repositories/map.repository';
 
 import {

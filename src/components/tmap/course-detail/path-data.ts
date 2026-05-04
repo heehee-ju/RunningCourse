@@ -2,7 +2,7 @@
  * 코스 상세 지도용 path_data 파싱·웨이포인트 모델 생성.
  */
 
-import type { WaypointMarkerRole } from '@/components/tmap/shared/build-waypoint-marker-icon';
+import type { WaypointMarkerRole } from '@/components/tmap/utils/build-waypoint-marker-icon';
 
 const LOG = '[TmapCourseDetail]';
 
