@@ -28,7 +28,7 @@ const MIN_ZOOM_LEVEL = 11;
 const MAX_ZOOM_LEVEL = 19;
 
 /** fitBounds 경계 여백(px). 값이 클수록 더 넓게(줌 아웃) 보임 */
-const FIT_BOUNDS_PADDING_PX = 72;
+const FIT_BOUNDS_PADDING_PX = 144;
 
 type TmapCourseDetailProps = {
   course: Route;
