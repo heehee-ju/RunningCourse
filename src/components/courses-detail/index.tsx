@@ -24,9 +24,9 @@ import { Icon } from '@/commons/components/icons';
 import { ROUTES } from '@/commons/constants/url';
 import { Header } from '@/commons/layout/header';
 import type { Route } from '@/commons/types/runroute';
+import { TmapCourseDetail } from '@/components/tmap/course-detail';
 import { useCourseLikes } from '@/hooks/useCourseLikes';
 
-import CourseDetailMapPreview from './CourseDetailMapPreview';
 import styles from './styles.module.css';
 
 const COPY = {
@@ -84,7 +84,7 @@ export function Courses({ course, authorNickname, location, canEdit = false }: C
       />
       <div className={styles.scrollArea}>
         <section className={styles.mapPreview} aria-label={COPY.mapPreview}>
-          <CourseDetailMapPreview key={course.id} course={course} mapLabel={COPY.mapPreview} />
+          <TmapCourseDetail key={course.id} course={course} mapLabel={COPY.mapPreview} />
         </section>
 
         <article className={styles.content}>
@@ -201,9 +201,6 @@ export function Courses({ course, authorNickname, location, canEdit = false }: C
               </div>
             ) : (
               <div className={styles.emptyImageCard} role="status" aria-live="polite">
-                <span className={styles.emptyImageIcon} aria-hidden>
-                  ...
-                </span>
                 <p className={styles.emptyImageTitle}>{COPY.emptyImageTitle}</p>
               </div>
             )}

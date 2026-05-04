@@ -10,6 +10,7 @@ function markerTitleByRole(role: WaypointMarkerRole): string {
   return '경유지';
 }
 
+/** `public/icons` 에셋 경로 */
 const ROLE_TO_ICON_PATH: Record<WaypointMarkerRole, string> = {
   start: '/icons/flag_start.png',
   via: '/icons/flag_point.png',

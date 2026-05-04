@@ -45,6 +45,8 @@ type CoursesListProps = {
   isLoading?: boolean;
   isCourseLiked?: (courseId: string) => boolean;
   getCourseLikeCount?: (courseId: string) => number;
+  /** 바텀이 접힌 상태에서 마커 선택 시 증가시키면 시트를 peek으로 올린다 */
+  openPeekFromCollapsedSignal?: number;
   onSheetPositionChange?: (payload: SheetPositionPayload) => void;
   onCourseSelect?: (courseId: string) => void;
   onCourseLikeToggle?: (courseId: string) => void;
@@ -55,6 +57,7 @@ export function CoursesList({
   isLoading = false,
   isCourseLiked,
   getCourseLikeCount,
+  openPeekFromCollapsedSignal,
   onSheetPositionChange,
   onCourseSelect,
   onCourseLikeToggle,
@@ -172,6 +175,22 @@ export function CoursesList({
       window.visualViewport?.removeEventListener('resize', syncViewportHeight);
     };
   }, []);
+
+  // [연동] 지도 마커 클릭 시(부모에서 시그널 증가) 접힌 바텀시트를 peek으로 복구
+  useEffect(() => {
+    if (openPeekFromCollapsedSignal === undefined || openPeekFromCollapsedSignal <= 0) {
+      return;
+    }
+    setSheetState((previous) => {
+      if (previous !== 'collapsed') {
+        return previous;
+      }
+      requestAnimationFrame(() => {
+        cardListRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      return 'peek';
+    });
+  }, [openPeekFromCollapsedSignal]);
 
   // [초기 렌더 보정] 실제 높이 측정 전에는 뷰포트 높이로 시트 이동값을 계산한다.
   const effectiveSheetHeight = sheetHeight > 0 ? sheetHeight : viewportHeight;

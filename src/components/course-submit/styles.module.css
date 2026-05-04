@@ -89,7 +89,7 @@
   border-bottom: 1px solid var(--color-card_outline-100);
 }
 
-/* Tmap / CourseDetailMapPreview 공통 — 영역 높이를 꽉 채움 */
+/* Tmap / TmapCourseDetail 공통 — 영역 높이를 꽉 채움 */
 .mapSlot {
   flex: 1;
   width: 100%;

@@ -1,4 +1,9 @@
-import type { CourseCardView, ReferenceLocation, Route } from '@/commons/types/runroute';
+import type {
+  CourseCardView,
+  ReferenceLocation,
+  Route,
+  RouteViewport,
+} from '@/commons/types/runroute';
 import {
   calculateLinearDistanceMeters,
   hasValidRouteStartCoordinate,
@@ -26,6 +31,38 @@ export function dedupeRoutesById(routes: Route[]): Route[] {
     deduped.set(route.id, route);
   }
   return Array.from(deduped.values());
+}
+
+/** 시작점이 주어진 RouteViewport 안에 있는지 (useRoutes 클라이언트 필터와 동일 규칙). */
+export function isRouteStartInRouteViewport(route: Route, viewport: RouteViewport | null): boolean {
+  if (!viewport) return true;
+
+  const { northEastLat, northEastLng, southWestLat, southWestLng } = viewport;
+  const values = [northEastLat, northEastLng, southWestLat, southWestLng];
+  if (values.some((value) => !Number.isFinite(value))) {
+    return true;
+  }
+
+  const minLat = Math.min(northEastLat, southWestLat);
+  const maxLat = Math.max(northEastLat, southWestLat);
+  const minLng = Math.min(northEastLng, southWestLng);
+  const maxLng = Math.max(northEastLng, southWestLng);
+
+  return (
+    route.start_lat >= minLat &&
+    route.start_lat <= maxLat &&
+    route.start_lng >= minLng &&
+    route.start_lng <= maxLng
+  );
+}
+
+/** 목록 등 UI 표시용 — 바텀시트 상단 등에 실제 보이는 영역만 노출할 때 사용 */
+export function filterRoutesByRouteViewport(
+  routes: Route[],
+  viewport: RouteViewport | null,
+): Route[] {
+  if (!viewport) return routes;
+  return routes.filter((route) => isRouteStartInRouteViewport(route, viewport));
 }
 
 // [필터] 선택된 거리 카테고리 기준 필터링

@@ -27,7 +27,7 @@ import { Label } from '@/commons/components/input/label';
 import Tooltip from '@/commons/components/tooltip';
 import { Header } from '@/commons/layout/header';
 import { useModal } from '@/commons/providers/modal/modal.provider';
-import CourseDetailMapPreview from '@/components/courses-detail/CourseDetailMapPreview';
+import { TmapCourseDetail } from '@/components/tmap/course-detail';
 import TmapCourseSubmit from '@/components/tmap/course-submit';
 import type { CourseDetailPayload } from '@/services/course/courseDetailService';
 
@@ -112,7 +112,7 @@ export default function CourseSubmit({ mode, courseId, initialData }: CourseSubm
       <div className={styles.mapArea} aria-label="지도 영역">
         <div className={styles.mapSlot}>
           {showReadOnlyRouteMap ? (
-            <CourseDetailMapPreview
+            <TmapCourseDetail
               key={initialData.course.id}
               course={initialData.course}
               mapLabel={TEXTS.MAP_PREVIEW_LABEL}
