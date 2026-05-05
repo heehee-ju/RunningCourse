@@ -333,6 +333,7 @@ export function TmapHome({
   const isMapInteractingRef = useRef(false);
   const interactionWatchdogTimerRef = useRef<number | null>(null);
   const lastAppliedZoomRef = useRef<number | null>(null);
+  const lastZoomLimitNoticeRef = useRef<'min' | 'max' | null>(null);
   const lastQueryViewportRef = useRef<RouteViewport | null>(null);
   const lastVisibleViewportReportRef = useRef<RouteViewport | null>(null);
   /** 클러스터 재구성 — 바텀 오버레이/선택 상태 변화 추적 */
@@ -982,6 +983,21 @@ export function TmapHome({
       const handleZoomChanged = () => {
         const currentZoom = enforceMinZoomLevel(map);
         if (currentZoom === null) return;
+
+        if (currentZoom === MIN_ZOOM_LEVEL) {
+          if (lastZoomLimitNoticeRef.current !== 'min') {
+            lastZoomLimitNoticeRef.current = 'min';
+            onZoomLimitReached?.('min');
+          }
+        } else if (currentZoom === MAX_ZOOM_LEVEL) {
+          if (lastZoomLimitNoticeRef.current !== 'max') {
+            lastZoomLimitNoticeRef.current = 'max';
+            onZoomLimitReached?.('max');
+          }
+        } else {
+          lastZoomLimitNoticeRef.current = null;
+        }
+
         if (currentZoom === lastAppliedZoomRef.current) {
           syncRouteMarkersDisplayForZoom(map);
           scheduleMarkerVisibilitySync(map);
@@ -1037,6 +1053,7 @@ export function TmapHome({
       enforceMinZoomLevel,
       isMapInteractingRef,
       logMarkerCoordinateAudit,
+      onZoomLimitReached,
       scheduleMarkerVisibilitySync,
       scheduleViewportReport,
       syncRouteMarkersDisplayForZoom,
@@ -1518,27 +1535,24 @@ export function TmapHome({
       const reachedMin = nextZoom === MIN_ZOOM_LEVEL;
       const reachedMax = nextZoom === MAX_ZOOM_LEVEL;
       const reachedLimit = reachedMin || reachedMax;
+      if (reachedLimit) {
+        lastZoomLimitNoticeRef.current = reachedMax ? 'max' : 'min';
+        onZoomLimitReached?.(reachedMax ? 'max' : 'min');
+      } else {
+        lastZoomLimitNoticeRef.current = null;
+      }
       // Tmap이 제공하는 zoomIn/zoomOut을 우선 사용해 부드러운 전환을 유도한다.
       if (delta > 0 && typeof map.zoomIn === 'function') {
         map.zoomIn();
-        if (reachedLimit) {
-          onZoomLimitReached?.(reachedMax ? 'max' : 'min');
-        }
         return;
       }
       if (delta < 0 && typeof map.zoomOut === 'function') {
         map.zoomOut();
-        if (reachedLimit) {
-          onZoomLimitReached?.(reachedMax ? 'max' : 'min');
-        }
         return;
       }
 
       // zoomIn/zoomOut 미지원 런타임에서는 애니메이션 옵션을 포함해 폴백한다.
       map.setZoom(nextZoom, { animation: true, animate: true, duration: 200 });
-      if (reachedLimit) {
-        onZoomLimitReached?.(reachedMax ? 'max' : 'min');
-      }
     },
     [onZoomLimitReached],
   );

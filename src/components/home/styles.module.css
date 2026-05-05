@@ -68,11 +68,12 @@
 
 .noCourseToastLayer {
   position: absolute;
-  top: 16px;
+  top: 20px;
   left: 50%;
   z-index: 20;
   transform: translateX(-50%);
   pointer-events: none;
+  animation: homeToastLayerFadeIn 180ms ease-out;
 }
 
 .noCourseToast {
@@ -94,12 +95,33 @@
   letter-spacing: var(--typography-caption-1-ko-desktop-letter-spacing);
   box-shadow: 0 4px 12px color-mix(in srgb, var(--color-black-500) 18%, transparent);
   white-space: nowrap;
+  animation: homeToastContentRiseIn 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .noCourseToastIcon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+@keyframes homeToastLayerFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes homeToastContentRiseIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .mapPlaceholder {
