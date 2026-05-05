@@ -31,6 +31,11 @@ const TAB_ITEMS = [
 ];
 
 export function Home() {
+  type HomeToast = {
+    type: 'no-course' | 'zoom-limit';
+    message: string;
+  };
+
   // [상태] 홈 화면 기본 상태 관리
   const [sheetVisibleHeight, setSheetVisibleHeight] = useState(260);
   const sheetVisibleHeightRef = useRef(sheetVisibleHeight);
@@ -40,22 +45,25 @@ export function Home() {
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<Set<DistanceCategory>>(new Set());
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
-  const [mapViewport, setMapViewport] = useState<RouteViewport | null>(null);
-  const [homeToastMessage, setHomeToastMessage] = useState<string | null>(null);
+  const [homeToast, setHomeToast] = useState<HomeToast | null>(null);
   const [mapMoveSignal, setMapMoveSignal] = useState(0);
-  /** 데이터 필터용 — 전체 지도 getBounds 기준만 반영 (바텀시트 오버레이 제외) */
-  const [queryViewport, setQueryViewport] = useState<RouteViewport | null>(null);
   /** 목록 노출용 — 바텀시트로 가려지지 않은 영역 */
   const [visibleRouteViewport, setVisibleRouteViewport] = useState<RouteViewport | null>(null);
+  const [frozenVisibleRouteViewport, setFrozenVisibleRouteViewport] = useState<RouteViewport | null>(
+    null,
+  );
   const [referenceLocation, setReferenceLocation] =
     useState<ReferenceLocation>(SEOUL_CITY_HALL_REFERENCE);
-  const { routes, allRoutes, isLoading, errorMessage } = useRoutes(queryViewport);
+  const effectiveQueryViewport = isSheetExpanded
+    ? frozenVisibleRouteViewport
+    : visibleRouteViewport;
+  const { routes, allRoutes, isLoading, errorMessage } = useRoutes(effectiveQueryViewport);
   const router = useRouter();
   const previousQueryViewportRef = useRef<RouteViewport | null>(null);
   const noCourseToastDelayTimerRef = useRef<number | null>(null);
 
-  const showHomeToast = useCallback((message: string) => {
-    setHomeToastMessage(message);
+  const showHomeToast = useCallback((type: HomeToast['type'], message: string) => {
+    setHomeToast({ type, message });
   }, []);
 
   const isSameViewport = useCallback((left: RouteViewport | null, right: RouteViewport | null) => {
@@ -68,15 +76,7 @@ export function Home() {
     );
   }, []);
 
-  const handleViewportChanged = useCallback(
-    (nextViewport: RouteViewport) => {
-      setMapViewport((previous) =>
-        isSameViewport(previous, nextViewport) ? previous : nextViewport,
-      );
-      setQueryViewport((previous) => previous ?? { ...nextViewport });
-    },
-    [isSameViewport],
-  );
+  const handleViewportChanged = useCallback(() => {}, []);
 
   const handleVisibleRouteViewportChanged = useCallback(
     (nextViewport: RouteViewport | null) => {
@@ -88,22 +88,22 @@ export function Home() {
     [isSameViewport],
   );
 
-  // 지도 이동·줌으로 바뀐 전체 bounds만 데이터 필터에 반영 (바텀시트 높이는 제외)
   useEffect(() => {
-    if (!mapViewport) return;
-    setQueryViewport((previous) =>
-      isSameViewport(previous, mapViewport) ? previous : { ...mapViewport },
-    );
-  }, [isSameViewport, mapViewport]);
+    if (!isSheetExpanded && visibleRouteViewport) {
+      setFrozenVisibleRouteViewport((previous) =>
+        isSameViewport(previous, visibleRouteViewport) ? previous : { ...visibleRouteViewport },
+      );
+    }
+  }, [isSameViewport, isSheetExpanded, visibleRouteViewport]);
 
   useEffect(() => {
-    if (!queryViewport) return;
+    if (!effectiveQueryViewport) return;
     const previous = previousQueryViewportRef.current;
-    if (previous && !isSameViewport(previous, queryViewport)) {
+    if (previous && !isSameViewport(previous, effectiveQueryViewport)) {
       setMapMoveSignal((prev) => prev + 1);
     }
-    previousQueryViewportRef.current = queryViewport;
-  }, [isSameViewport, queryViewport]);
+    previousQueryViewportRef.current = effectiveQueryViewport;
+  }, [effectiveQueryViewport, isSameViewport]);
 
   useEffect(() => {
     if (noCourseToastDelayTimerRef.current !== null) {
@@ -111,11 +111,17 @@ export function Home() {
       noCourseToastDelayTimerRef.current = null;
     }
 
-    if (!mapMoveSignal || isLoading || !!errorMessage) return;
-    if (routes.length > 0) return;
+    if (!mapMoveSignal || isLoading || !!errorMessage) {
+      setHomeToast((previous) => (previous?.type === 'no-course' ? null : previous));
+      return;
+    }
+    if (routes.length > 0) {
+      setHomeToast((previous) => (previous?.type === 'no-course' ? null : previous));
+      return;
+    }
 
     noCourseToastDelayTimerRef.current = window.setTimeout(() => {
-      showHomeToast('해당 영역에 등록된 코스가 없습니다.');
+      showHomeToast('no-course', '해당 영역에 등록된 코스가 없습니다.');
       noCourseToastDelayTimerRef.current = null;
     }, 1500);
 
@@ -276,20 +282,20 @@ export function Home() {
             onVisibleViewportChanged={handleVisibleRouteViewportChanged}
             onZoomLimitReached={(limit) => {
               if (limit === 'min') {
-                showHomeToast('최소 배율 도달');
+                showHomeToast('zoom-limit', '최소 배율 도달');
                 return;
               }
-              showHomeToast('최대 배율 도달');
+              showHomeToast('zoom-limit', '최대 배율 도달');
             }}
           />
         </div>
-        {homeToastMessage ? (
+        {homeToast ? (
           <div className={styles.noCourseToastLayer} aria-live="polite">
             <div className={styles.noCourseToast}>
               <span className={styles.noCourseToastIcon}>
                 <Icon name="circleAlert" size={16} strokeWidth={2} />
               </span>
-              <span>{homeToastMessage}</span>
+              <span>{homeToast.message}</span>
             </div>
           </div>
         ) : null}
