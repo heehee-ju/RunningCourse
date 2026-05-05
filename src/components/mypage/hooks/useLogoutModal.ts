@@ -33,8 +33,8 @@ export function useLogoutModal(
     () =>
       isAnonymous
         ? {
-            title: '게스트 로그아웃',
-            content: '게스트 로그아웃 시 계정이 삭제됩니다. 진행하시겠습니까?',
+            title: '로그아웃',
+            content: '게스트 로그아웃 시 계정이 삭제됩니다.\n진행하시겠습니까?',
           }
         : {
             title: '로그아웃',

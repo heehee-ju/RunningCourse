@@ -29,6 +29,7 @@ export type HeaderProps = {
   showRightIcon?: boolean;
   leftIconName?: IconName;
   rightIconName?: IconName;
+  rightIconAriaLabel?: string;
   onLeftIconClick?: () => void;
   onRightIconClick?: () => void;
 };
@@ -41,6 +42,7 @@ export function Header({
   showRightIcon = true,
   leftIconName = 'chevronLeft',
   rightIconName = 'chevronRight',
+  rightIconAriaLabel,
   onLeftIconClick,
   onRightIconClick,
 }: HeaderProps) {
@@ -66,7 +68,7 @@ export function Header({
           <button
             type="button"
             className={styles.iconButton}
-            aria-label={COPY.rightIconAriaLabel}
+            aria-label={rightIconAriaLabel ?? COPY.rightIconAriaLabel}
             onClick={onRightIconClick}
           >
             <Icon name={rightIconName} size={24} strokeWidth={2} />

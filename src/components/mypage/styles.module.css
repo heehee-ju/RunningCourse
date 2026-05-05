@@ -6,7 +6,7 @@
  * - [x] 하드코딩 색상값 0건 (CSS 변수만 사용)
  * - [x] 인라인 스타일 0건
  * - [x] CSS 변수 사용 확인 (var(--color-*), var(--typography-*))
- * - [x] flexbox만 사용 (position: absolute 금지)
+ * - [x] 게스트 연동 CTA: position absolute (하단 오버레이)
  * - [x] 소수점 값 반올림 완료
  */
 
@@ -15,6 +15,7 @@
    ========================================== */
 
 .container {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -150,4 +151,61 @@
   font-weight: var(--typography-body-2-ko-desktop-font-weight);
   letter-spacing: var(--typography-body-2-ko-desktop-letter-spacing);
   color: var(--color-card_outline-500);
+}
+
+/* ==========================================
+   guest: Google 연동 버튼만 하단 오버레이 (백드롭·바 없음)
+   ========================================== */
+
+@keyframes googleContinueSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cardListWithGuestCta {
+  /* 플로팅 버튼(패딩 + 48px 높이) 스크롤 여유 */
+  padding-bottom: 88px;
+}
+
+.container .googleContinueOverlay {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2;
+  box-sizing: border-box;
+  width: auto;
+  /* 감속 위주 이징 · 조금 더 긴 시간으로 부드럽게 착지 */
+  animation: googleContinueSlideUp 0.68s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-shadow:
+    0 4px 12px color-mix(in srgb, var(--color-black-500) 22%, transparent),
+    0 2px 4px color-mix(in srgb, var(--color-black-500) 12%, transparent);
+  background-color: var(--color-white-500);
+  color: var(--color-black-500);
+  border: 1px solid var(--color-card_outline-100);
+}
+
+.container .googleContinueOverlay:hover:not(:disabled) {
+  background-color: var(--color-dark_grey-50);
+  color: var(--color-black-500);
+}
+
+.container .googleContinueOverlay:active:not(:disabled) {
+  background-color: var(--color-grey-100);
+  color: var(--color-black-500);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .container .googleContinueOverlay {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }

@@ -17,6 +17,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user && user.is_anonymous === false) {
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ is_anonymous: false })
+          .eq('id', user.id);
+
+        if (updateError) {
+          console.error('Failed to update user anonymity status:', updateError);
+        }
+      }
+
       return NextResponse.redirect(new URL(next, request.url));
     }
   }

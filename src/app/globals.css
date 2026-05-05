@@ -301,10 +301,32 @@
   }
 }
 
+/* 문서 루트 스크롤 제거 — 앱은 commons/layout 내부에서만 스크롤 */
+html {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
 body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
   color: var(--foreground);
   background: var(--background);
   font-family: var(--typography-body-1-ko-desktop-font-family);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body::-webkit-scrollbar {
+  display: none;
 }
 
 @layer utilities {

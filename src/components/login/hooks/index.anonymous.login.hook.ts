@@ -1,5 +1,6 @@
 'use client';
 
+import { isRedirectError } from 'next/dist/client/components/redirect';
 import { useCallback, useState } from 'react';
 
 import { signInAnonymously } from '@/actions/auth.action';
@@ -32,7 +33,10 @@ export function useAnonymousLogin({
         setError(result.error);
         setIsLoading(false);
       }
-    } catch {
+    } catch (error) {
+      if (isRedirectError(error)) {
+        throw error;
+      }
       setError('네트워크 오류가 발생했습니다.');
       setIsLoading(false);
     }

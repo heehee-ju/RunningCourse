@@ -2,7 +2,6 @@
 
 import { createClient as createSupabaseAdminClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { createClient } from '@/lib/supabase/server';
@@ -15,16 +14,75 @@ function isRelativePath(path: unknown): path is string {
 }
 
 /**
+ * OAuth `redirectTo`에 사용할 사이트 기준 URL (스킴 + 호스트, 끝 슬래시 없음).
+ * `headers().get('origin')` 대신 환경 변수로 고정해 프록시/SSR 환경에서도 동일한 절대 URL을 쓴다.
+ */
+function resolveSiteOrigin(): string {
+  const fromPublic = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (fromPublic) {
+    return fromPublic.replace(/\/$/, '');
+  }
+  const vercel = process.env.VERCEL_URL?.trim();
+  if (vercel) {
+    const host = vercel.replace(/^https?:\/\//, '');
+    return `https://${host}`;
+  }
+  const port = process.env.PORT ?? '3000';
+  return `http://localhost:${port}`;
+}
+
+/**
  * Google OAuth URL을 발급하고 브라우저를 Google 로그인 페이지로 리다이렉트한다.
  * 콜백은 /auth/callback?next={returnTo} 로 돌아온다.
  */
 export async function signInWithGoogle(returnTo: string = '/'): Promise<{ error: string } | void> {
   const supabase = createClient();
-  const origin = headers().get('origin') ?? '';
+  const origin = resolveSiteOrigin();
   const safeReturnTo = isRelativePath(returnTo) ? returnTo : '/';
   const callbackUrl = `${origin}/auth/callback?next=${encodeURIComponent(safeReturnTo)}`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: callbackUrl,
+    },
+  });
+
+  if (error || !data.url) {
+    return { error: error?.message ?? 'OAuth URL 발급 실패' };
+  }
+
+  redirect(data.url);
+}
+
+/**
+ * 익명 세션을 Google OAuth와 연동한다 (Supabase Manual Linking 필요).
+ * 완료 후 `/auth/callback?next={returnTo}` 로 돌아와 세션이 교환된다.
+ */
+export async function linkGoogleAccount(returnTo: string = '/'): Promise<{ error: string } | void> {
+  const supabase = createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    return { error: userError.message };
+  }
+
+  if (!user?.id) {
+    return { error: '로그인된 세션이 없습니다.' };
+  }
+
+  if (user.is_anonymous !== true) {
+    return { error: '익명 계정만 구글 계정과 연동할 수 있습니다.' };
+  }
+
+  const origin = resolveSiteOrigin();
+  const safeReturnTo = isRelativePath(returnTo) ? returnTo : '/';
+  const callbackUrl = `${origin}/auth/callback?next=${encodeURIComponent(safeReturnTo)}`;
+
+  const { data, error } = await supabase.auth.linkIdentity({
     provider: 'google',
     options: {
       redirectTo: callbackUrl,

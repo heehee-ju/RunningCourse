@@ -4,6 +4,7 @@ import { useEffect, useId, useRef } from 'react';
 
 import { Button } from '@/commons/components/button';
 import { Icon } from '@/commons/components/icons';
+import { SEOUL_CITY_HALL_COORDINATE } from '@/commons/utils/geo';
 
 import { useCourseMap, type SaveRoutePayload } from './hooks/useCourseMap';
 import styles from './styles.module.css';
@@ -12,7 +13,11 @@ type CourseSubmitMapProps = {
   onSaveRoute?: (payload: SaveRoutePayload) => void;
 };
 
-const DEFAULT_CENTER = { lat: 37.5665, lng: 126.978 };
+const DEFAULT_GEOLOCATION_OPTIONS: PositionOptions = {
+  enableHighAccuracy: false,
+  timeout: 6000,
+  maximumAge: 15000,
+};
 
 export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) {
   const mapContainerId = useId().replace(/:/g, '-');
@@ -26,7 +31,6 @@ export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) 
     isPointLimitReached,
     initializeMap,
     undo,
-    reset,
     saveRoute,
   } = useCourseMap({ onSaveRoute });
 
@@ -40,7 +44,28 @@ export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) 
         window.setTimeout(initialize, 120);
         return;
       }
-      initializeMap(mapElementId, DEFAULT_CENTER);
+
+      const runInit = (center: { lat: number; lng: number }) => {
+        if (cancelled) return;
+        initializeMap(mapElementId, center);
+      };
+
+      if (typeof window !== 'undefined' && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            runInit({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            });
+          },
+          () => {
+            runInit(SEOUL_CITY_HALL_COORDINATE);
+          },
+          DEFAULT_GEOLOCATION_OPTIONS,
+        );
+      } else {
+        runInit(SEOUL_CITY_HALL_COORDINATE);
+      }
     };
 
     initialize();
@@ -64,17 +89,6 @@ export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) 
           disabled={points.length === 0}
         >
           되돌리기
-        </Button>
-        <Button
-          variant="outline"
-          borderRadius="r12"
-          size="small"
-          color="dark"
-          leftIcon={<Icon name="rotateCcw" size={16} />}
-          onClick={reset}
-          disabled={points.length === 0}
-        >
-          초기화
         </Button>
       </div>
 

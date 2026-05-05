@@ -6,8 +6,9 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+import type { Route } from '@/commons/types/runroute';
 import { createClient } from '@/lib/supabase/server';
-import * as courseRepository from '@/repositories/course.repository';
+import * as courseRepository from '@/repositories/course/course.repository';
 import { reverseGeocodeRegion } from '@/repositories/map.repository';
 import * as courseService from '@/services/course/courseService';
 import type { SubmitCourseInput } from '@/services/course/courseService';
@@ -18,6 +19,24 @@ export type CreateCourseActionError = {
 };
 
 type DeleteCourseActionResult = { success: true } | { success: false; error: string };
+
+/** 코스 메타데이터(제목·설명·이미지) 수정 시 서버 액션 입력 */
+export type UpdateCourseActionInput = {
+  courseId: string;
+  title: string;
+  description: string | null;
+  image_urls: string[];
+};
+
+export type UpdateCourseActionResult =
+  | { success: true; data: Route }
+  | { success: false; error: string };
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isValidUuid(value: string): boolean {
+  return UUID_REGEX.test(value.trim());
+}
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
@@ -131,4 +150,68 @@ export async function deleteCourseAction(routeId: string): Promise<DeleteCourseA
         error instanceof Error ? error.message : '코스 삭제 중 알 수 없는 오류가 발생했습니다.',
     };
   }
+}
+
+/**
+ * 기존 코스 게시글의 제목·설명·이미지를 수정한다.
+ * 성공 시 상세·목록 경로 캐시를 무효화한다.
+ */
+export async function updateCourseAction(
+  input: UpdateCourseActionInput,
+): Promise<UpdateCourseActionResult> {
+  const { courseId, title, description, image_urls } = input;
+
+  if (!courseId?.trim() || !isValidUuid(courseId)) {
+    return { success: false, error: '유효하지 않은 코스 ID입니다.' };
+  }
+
+  const trimmedTitle = typeof title === 'string' ? title.trim() : '';
+  if (!trimmedTitle) {
+    return { success: false, error: '제목을 입력해 주세요.' };
+  }
+
+  if (!Array.isArray(image_urls)) {
+    return { success: false, error: '이미지 URL 목록 형식이 올바르지 않습니다.' };
+  }
+
+  if (!image_urls.every((url): url is string => typeof url === 'string')) {
+    return { success: false, error: '이미지 URL 목록 형식이 올바르지 않습니다.' };
+  }
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: '로그인이 필요합니다.' };
+  }
+
+  const normalizedDescription =
+    typeof description === 'string' && description.trim().length > 0 ? description.trim() : null;
+
+  const id = courseId.trim();
+
+  const { data, error } = await courseService.updateCourse(
+    supabase,
+    {
+      courseId: id,
+      title: trimmedTitle,
+      description: normalizedDescription,
+      image_urls,
+    },
+    user.id,
+  );
+
+  if (error || !data) {
+    return {
+      success: false,
+      error: error?.message ?? '코스 수정에 실패했습니다.',
+    };
+  }
+
+  revalidatePath(`/courses/${id}`);
+  revalidatePath('/courses');
+
+  return { success: true, data };
 }

@@ -1,72 +1,55 @@
+/**
+ * 티맵 공식 Marker 옵션 패턴 유지: `icon` 은 프로젝트 `public/icons/*.png` 루트 경로 문자열.
+ *
+ * 홈 지도 마커 색 ↔ 거리 구간 (`getDistanceCategory` 와 동일):
+ * - marker_blue   · ~3km   · UNDER_3
+ * - marker_green  · 3~5km  · BETWEEN_3_AND_5
+ * - marker_red    · 5~10km · BETWEEN_5_AND_10
+ * - marker_orange · 10km~  · OVER_10
+ */
 import type { DistanceCategory } from '@/components/home/utils/course-filter';
 
 export type MarkerVisualState = 'default' | 'hover' | 'clicked';
 
-const MARKER_COLOR_BY_CATEGORY: Record<DistanceCategory, string> = {
-  UNDER_3: '#3B82F6',
-  BETWEEN_3_AND_5: '#16A34A',
-  BETWEEN_5_AND_10: '#EF4444',
-  OVER_10: '#F59E0B',
+const CATEGORY_TO_ICON_PATH: Record<DistanceCategory, string> = {
+  UNDER_3: '/icons/marker_blue.png',
+  BETWEEN_3_AND_5: '/icons/marker_green.png',
+  BETWEEN_5_AND_10: '/icons/marker_red.png',
+  OVER_10: '/icons/marker_orange.png',
 };
 
-const MARKER_SIZE_BY_STATE: Record<MarkerVisualState, number> = {
-  default: 1,
-  hover: 1.18,
-  clicked: 1.4,
-};
+/** 원본 144×200 PNG를 공식 예제 핀과 비슷한 스케일로 표시 (비율 유지 48×66) */
+export const ROUTE_MARKER_ICON_DISPLAY_SIZE = {
+  width: 48,
+  height: 66,
+} as const;
 
-/** SVG 뷰박스·외곽 크기 — hover/clicked scale·그림자 상·좌우 클립 방지용 여백 */
-const ROUTE_MARKER_SVG_VIEW_BOX = '-14 -32 72 100';
-const ROUTE_MARKER_SVG_WIDTH = 72;
-const ROUTE_MARKER_SVG_HEIGHT = 100;
+/** 원본 PNG(144×200) 알파 픽셀 기준 핀 꼭짓점 좌표 */
+const ROUTE_MARKER_SOURCE_SIZE = { width: 144, height: 200 } as const;
+const ROUTE_MARKER_SOURCE_TIP = { x: 67.5, y: 149 } as const;
 
 /**
- * 위 SVG와 동기화한 Tmap `iconSize`·`iconAnchor`(지도 좌표는 핀 끝 기준).
+ * 표시 크기에 맞춘 핀 꼭짓점 앵커.
+ * 꼭짓점을 정확히 맞추기 위해 소수점 앵커를 그대로 사용한다.
  */
-export const ROUTE_MARKER_ICON_PIXEL_SIZE = { width: 52, height: 74 } as const;
-export const ROUTE_MARKER_ICON_ANCHOR = { x: 26, y: 70 } as const;
-
-const ICON_GEOMETRY_REVISION = 4;
-
-const markerIconUrlCache = new Map<string, string>();
-
-function toSvgDataUrl(svgMarkup: string): string {
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svgMarkup)}`;
+export function getRouteMarkerAnchorForDisplay(): { x: number; y: number } {
+  return {
+    x:
+      (ROUTE_MARKER_SOURCE_TIP.x / ROUTE_MARKER_SOURCE_SIZE.width) *
+      ROUTE_MARKER_ICON_DISPLAY_SIZE.width,
+    y:
+      (ROUTE_MARKER_SOURCE_TIP.y / ROUTE_MARKER_SOURCE_SIZE.height) *
+      ROUTE_MARKER_ICON_DISPLAY_SIZE.height,
+  };
 }
 
-function buildRunningCourseMarkerSvg(color: string, state: MarkerVisualState): string {
-  const scale = MARKER_SIZE_BY_STATE[state];
-  const stroke = state === 'clicked' ? '#111827' : '#1F2937';
-  const strokeWidth = state === 'clicked' ? 2.25 : 1.75;
-  const ringOpacity = state === 'default' ? 0.18 : state === 'hover' ? 0.3 : 0.42;
-
-  /* 코스 마커 아이콘 SVG 마크업 */
-  return `
-<svg xmlns="http://www.w3.org/2000/svg" width="${ROUTE_MARKER_SVG_WIDTH}" height="${ROUTE_MARKER_SVG_HEIGHT}" viewBox="${ROUTE_MARKER_SVG_VIEW_BOX}">
-  <defs>
-    <filter id="markerShadow" x="-55%" y="-45%" width="210%" height="230%">
-      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.22"/>
-    </filter>
-  </defs>
-  <g transform="translate(20 23) scale(${scale}) translate(-18 -20)" filter="url(#markerShadow)">
-    <path d="M18 2C11.37 2 6 7.37 6 14c0 9.04 10.37 17.6 11.17 18.24.48.38 1.18.38 1.66 0C19.63 31.6 30 23.04 30 14 30 7.37 24.63 2 18 2z" fill="${color}" stroke="${stroke}" stroke-width="${strokeWidth}"/>
-    <circle cx="18" cy="14" r="6.2" fill="#fafafa"/>
-    <circle cx="18" cy="14" r="8.9" fill="none" stroke="#fafafa" stroke-opacity="${ringOpacity}" stroke-width="1.3"/>
-  </g>
-</svg>
-`.trim();
-}
-
+/**
+ * 거리 카테고리별 마커 PNG.
+ * `visualState` 는 기존 호출부 호환용(아이콘은 동일 파일).
+ */
 export function getRunningCourseMarkerIconUrlForCategory(
   category: DistanceCategory,
-  state: MarkerVisualState,
+  _visualState?: MarkerVisualState,
 ): string {
-  const cacheKey = `${category}:${state}:geom${ICON_GEOMETRY_REVISION}`;
-  const cachedIconUrl = markerIconUrlCache.get(cacheKey);
-  if (cachedIconUrl) return cachedIconUrl;
-
-  const color = MARKER_COLOR_BY_CATEGORY[category];
-  const iconUrl = toSvgDataUrl(buildRunningCourseMarkerSvg(color, state));
-  markerIconUrlCache.set(cacheKey, iconUrl);
-  return iconUrl;
+  return CATEGORY_TO_ICON_PATH[category];
 }

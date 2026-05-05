@@ -93,6 +93,46 @@ export async function createRoute(
 
 export const createCourse = createRoute;
 
+/** `routes` 테이블에서 제목·설명·이미지 등 메타데이터만 갱신할 때 사용 */
+export interface UpdateCourseParams {
+  courseId: string;
+  userId: string;
+  title: string;
+  description: string | null;
+  image_urls: string[];
+}
+
+/**
+ * 주어진 코스의 title, description, image_urls, updated_at을 갱신하고
+ * 갱신된 행을 조회 모델(`Route`)로 반환한다.
+ */
+export async function updateCourse(
+  supabase: SupabaseClient,
+  params: UpdateCourseParams,
+): Promise<{ data: Route | null; error: Error | null }> {
+  const { courseId, userId, title, description, image_urls } = params;
+
+  const { data, error } = await supabase
+    .from('routes')
+    .update({
+      title,
+      description,
+      image_urls,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', courseId)
+    .eq('user_id', userId)
+    .select(ROUTE_SELECT)
+    .single()
+    .returns<RouteRow>();
+
+  if (error) {
+    return { data: null, error: new Error(error.message) };
+  }
+
+  return { data: toRoute(data), error: null };
+}
+
 /** 현재 유저가 작성한 코스(`routes.user_id`) 목록 */
 export async function getRoutesByUserId(
   supabase: SupabaseClient,
@@ -145,6 +185,31 @@ export async function getLikedRoutesByUserId(
   }
 
   return { data: normalizeRouteRows(routeRows), error: null };
+}
+
+/**
+ * 특정 유저가 `routes` 테이블에 작성한 코스(행)의 총 개수를 조회한다.
+ * 서버 전용 Supabase 클라이언트로 질의하며, UI·비즈니스 규칙은 포함하지 않는다.
+ */
+export async function getRouteCountByUserId(userId: string): Promise<number> {
+  // 요청·응답 쿠키를 반영하는 서버 사이드 Supabase 인스턴스를 만든다.
+  const supabase = createClient();
+  // `routes` 테이블을 대상으로 집계 쿼리를 준비한다.
+  const { count, error } = await supabase
+    .from('routes')
+    // 행 데이터는 가져오지 않고(`head: true`) 정확한 건수(`count: 'exact'`)만 요청한다.
+    .select('*', { count: 'exact', head: true })
+    // 주어진 UUID와 일치하는 작성자의 코스만 센다.
+    .eq('user_id', userId);
+
+  // Supabase/PostgREST가 에러 객체를 돌려주면 통신 실패로 본다.
+  if (error) {
+    // 메시지를 유지한 예외로 올려 서비스 계층에서 일관되게 처리하게 한다.
+    throw new Error(error.message);
+  }
+
+  // 집계가 비어 있으면 null일 수 있어, 숫자 비교에 안전한 0으로 치환한다.
+  return count ?? 0;
 }
 
 export async function deleteRoute(routeId: string, userId: string): Promise<void> {

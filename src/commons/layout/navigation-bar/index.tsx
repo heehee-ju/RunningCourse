@@ -9,6 +9,8 @@
  */
 
 import type { IconName } from '@/commons/components/icons';
+import { ROUTES } from '@/commons/constants/url';
+import { useGuestGuard } from '@/commons/hooks/useGuestGuard';
 import { useRequireAuthModal } from '@/commons/hooks/useRequireAuthModal';
 
 import { NavigationItem } from './navigation-item';
@@ -32,10 +34,12 @@ export type NavigationBarProps = {
   activeHref?: string;
   /** 미지정 시 홈·코스 등록·마이페이지 기본 3탭 */
   items?: NavigationBarLink[];
+  /** 게스트가 이미 코스를 1건 이상 작성했는지 여부. `app/layout.tsx` 서버에서 집계해 `Layout` 경유로 전달된다. */
+  hasWrittenCourse?: boolean;
 };
 
 const DEFAULT_ITEMS: NavigationBarLink[] = [
-  { href: '/', label: COPY.home, icon: 'house' },
+  { href: '/', label: COPY.home, icon: 'map' },
   { href: '/courses/new', label: COPY.courseRegister, icon: 'squarePlus' },
   { href: '/mypage', label: COPY.myPage, icon: 'userRound' },
 ];
@@ -44,8 +48,10 @@ export function NavigationBar({
   className,
   activeHref,
   items = DEFAULT_ITEMS,
+  hasWrittenCourse = false,
 }: NavigationBarProps) {
   const { requireAuth, isPrivateRoute } = useRequireAuthModal();
+  const { requireFullAccountForCourse } = useGuestGuard();
   const rootClass = [styles.root, className].filter(Boolean).join(' ');
 
   return (
@@ -68,6 +74,18 @@ export function NavigationBar({
                   const canNavigate = requireAuth({ redirectTo: item.href });
                   if (!canNavigate) {
                     event.preventDefault();
+                    return;
+                  }
+
+                  // 코스 등록: 로그인 후에도 게스트 1회 작성 정책을 별도 가드
+                  if (item.href === ROUTES.COURSES.NEW) {
+                    let courseNavAllowed = false;
+                    requireFullAccountForCourse(hasWrittenCourse, () => {
+                      courseNavAllowed = true;
+                    });
+                    if (!courseNavAllowed) {
+                      event.preventDefault();
+                    }
                   }
                 }}
               />

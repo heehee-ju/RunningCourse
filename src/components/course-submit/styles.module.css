@@ -80,13 +80,22 @@
 
 .mapArea {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: flex-start;
   flex-shrink: 0;
   width: 100%;
-  height: 272px;
+  height: 35dvh;
   background-color: var(--color-white_grey-100); /* Figma 배경색과 가장 가까운 토큰 */
   border-bottom: 1px solid var(--color-card_outline-100);
+}
+
+/* Tmap / TmapCourseDetail 공통 — 영역 높이를 꽉 채움 */
+.mapSlot {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .mapLabel {
@@ -115,6 +124,11 @@
   flex-direction: column;
   gap: 8px;
   width: 100%;
+}
+
+/* 라벨 행과 이미지 줄 사이 간격 제거 */
+.fieldGroupNoGap {
+  gap: 0;
 }
 
 .infoLabelRow {
@@ -178,10 +192,41 @@
 .imageList {
   display: flex;
   flex-direction: row;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  /* 썸네일 80px + 삭제 뱃지 여유 12px — 이미지 유무와 관계없이 한 줄 높이 고정 */
+  /* min-height: 92px; */
+}
+
+.imageAddColumn {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.imageListScroll {
+  display: flex;
+  flex-direction: row;
   align-items: flex-end;
   gap: 8px;
+  flex: 1;
+  min-width: 0;
+  /* 삭제 뱃지(top/right: -8px)가 overflow 스크롤 영역에 잘리지 않도록 */
   padding-top: 8px;
+  padding-right: 10px;
+  /* 빈 상태와 동일한 높이 유지 → 레이아웃 시프트 방지 */
+  min-height: 92px;
+  box-sizing: border-box;
   overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.imageListScroll::-webkit-scrollbar {
+  display: none;
 }
 
 .addImageButton {
@@ -198,6 +243,11 @@
   border-radius: 12px;
   cursor: pointer;
   min-height: 44px;
+}
+
+.addImageButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .addImageCircle {

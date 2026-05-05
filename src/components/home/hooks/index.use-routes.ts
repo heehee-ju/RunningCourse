@@ -6,7 +6,10 @@ import type { Route, RouteViewport } from '@/commons/types/runroute';
 import { fetchHomeRoutes } from '@/services/course/homeCourseService';
 
 type UseRoutesResult = {
+  /** 뷰포트(bounds) 안에 시작점이 있는 코스만 */
   routes: Route[];
+  /** 뷰포트 필터 없이 전체(선택 유지·오버레이용) */
+  allRoutes: Route[];
   isLoading: boolean;
   errorMessage: string | null;
 };
@@ -78,5 +81,5 @@ export function useRoutes(viewport: RouteViewport | null): UseRoutesResult {
     });
   }, [allRoutes, viewport]);
 
-  return { routes, isLoading, errorMessage };
+  return { routes, allRoutes, isLoading, errorMessage };
 }

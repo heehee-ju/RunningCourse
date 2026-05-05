@@ -1,16 +1,22 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-import { createCourseAction } from '@/actions/course.action';
+import { createCourseAction, updateCourseAction } from '@/actions/course.action';
 import { uploadCourseImages } from '@/commons/utils/storage.util';
 import type { SaveRoutePayload } from '@/components/tmap/course-submit/hooks/useCourseMap';
+import type { CourseDetailPayload } from '@/services/course/courseDetailService';
+
+import type { ChangeEvent } from 'react';
 
 export const MAX_COURSE_SUBMIT_IMAGES = 5;
 
 export type UseCourseSubmitParams = {
   mode: 'new' | 'edit';
   courseId?: string;
+  /** 수정 모드에서 서버에서 받은 코스 상세(폼 초기값) */
+  initialData?: CourseDetailPayload;
 };
 
 export type RouteData = SaveRoutePayload;
@@ -49,18 +55,35 @@ export function isRouteDataCompleteForSubmit(data: RouteData | null): data is Ro
   return true;
 }
 
-export function useCourseSubmit({ mode, courseId }: UseCourseSubmitParams) {
+export function useCourseSubmit({ mode, courseId, initialData }: UseCourseSubmitParams) {
+  const router = useRouter();
   const [courseName, setCourseName] = useState('');
   const [description, setDescription] = useState('');
+  /** 편집 시 서버에 이미 저장된 이미지 URL (신규 업로드와 합쳐 수정 요청에 사용) */
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
   const [images, setImages] = useState<File[]>([]);
+  /** `images`와 동기화된 blob 미리보기 URL — 언마운트·의존성 변경 시 revoke */
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [routeData, setRouteData] = useState<RouteData | null>(null);
 
   useEffect(() => {
-    if (mode !== 'edit' || !courseId) {
+    if (!initialData?.course) {
       return;
     }
-    // TODO(edit): courseId로 기존 코스를 조회해 폼·routeData·이미지 초기값을 채운다.
-  }, [mode, courseId]);
+    const { title, description: desc, image_urls } = initialData.course;
+    setCourseName(title ?? '');
+    setDescription(typeof desc === 'string' ? desc : '');
+    setExistingImageUrls(Array.isArray(image_urls) ? [...image_urls] : []);
+  }, [initialData]);
+
+  useEffect(() => {
+    const nextUrls = images.map((file) => URL.createObjectURL(file));
+    setImagePreviewUrls(nextUrls);
+
+    return () => {
+      nextUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [images]);
 
   const handleSaveRoute = useCallback((data: SaveRoutePayload) => {
     const normalized: RouteData = {
@@ -84,31 +107,72 @@ export function useCourseSubmit({ mode, courseId }: UseCourseSubmitParams) {
   }, []);
 
   const handleImageInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    (e: ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
-      if (!files) return;
-      const remaining = MAX_COURSE_SUBMIT_IMAGES - images.length;
-      const nextFiles = Array.from(files).slice(0, remaining);
-      setImages((prev) => [...prev, ...nextFiles]);
+      if (!files?.length) return;
+
+      const selectedFiles = Array.from(files);
+
+      setImages((prevImages) => {
+        const currentTotal = existingImageUrls.length + prevImages.length;
+        const remaining = MAX_COURSE_SUBMIT_IMAGES - currentTotal;
+        if (remaining <= 0) {
+          return prevImages;
+        }
+        const allowedFiles = selectedFiles.slice(0, remaining);
+        return [...prevImages, ...allowedFiles];
+      });
+
       e.target.value = '';
     },
-    [images.length],
+    [existingImageUrls],
   );
+
+  const handleRemoveExistingImage = useCallback((index: number) => {
+    setExistingImageUrls((prev) => prev.filter((_, i) => i !== index));
+  }, []);
 
   const removeImageAt = useCallback((index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  const isSubmitEnabled = courseName.trim().length > 0 && isRouteDataCompleteForSubmit(routeData);
+  const isSubmitEnabled =
+    mode === 'edit'
+      ? courseName.trim().length > 0
+      : courseName.trim().length > 0 && isRouteDataCompleteForSubmit(routeData);
 
   const handleSubmit = useCallback(async () => {
     const title = courseName.trim();
-    if (!title || !isRouteDataCompleteForSubmit(routeData)) return;
 
     if (mode === 'edit') {
-      // TODO(edit): 수정 API와 스토리지(이미지 교체) 정책에 맞춰 제출 로직을 연결한다.
+      if (!title || !courseId?.trim()) return;
+
+      try {
+        const uploadedUrls = await uploadCourseImages(images);
+        const image_urls = [...existingImageUrls, ...uploadedUrls];
+
+        const result = await updateCourseAction({
+          courseId: courseId.trim(),
+          title,
+          description: description.trim() || null,
+          image_urls,
+        });
+
+        if (!result.success) {
+          window.alert(result.error);
+          return;
+        }
+
+        router.push(`/courses/${courseId.trim()}`);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : '코스 수정 중 오류가 발생했습니다.';
+        window.alert(message);
+      }
       return;
     }
+
+    if (!title || !isRouteDataCompleteForSubmit(routeData)) return;
 
     try {
       const imageUrls = await uploadCourseImages(images);
@@ -133,17 +197,20 @@ export function useCourseSubmit({ mode, courseId }: UseCourseSubmitParams) {
       const message = error instanceof Error ? error.message : '코스 등록 중 오류가 발생했습니다.';
       window.alert(message);
     }
-  }, [courseName, description, images, mode, routeData]);
+  }, [courseName, courseId, description, existingImageUrls, images, mode, routeData, router]);
 
   return {
     courseName,
     setCourseName,
     description,
     setDescription,
+    existingImageUrls,
     images,
+    imagePreviewUrls,
     routeData,
     handleSaveRoute,
     handleImageInputChange,
+    handleRemoveExistingImage,
     removeImageAt,
     handleSubmit,
     isSubmitEnabled,
