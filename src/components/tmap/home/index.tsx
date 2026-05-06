@@ -168,6 +168,7 @@ type TmapHomeProps = {
   bottomSheetVisibleHeight?: number;
   isBottomSheetExpanded?: boolean;
   routes?: Route[];
+  initialViewport?: RouteViewport | null;
   selectedCourseId?: string | null;
   /** 마커 클릭 시마다 증가 — 보이는 지도 영역 기준 1회 중앙 정렬에만 사용 */
   markerClickRecenterToken?: number;
@@ -177,6 +178,7 @@ type TmapHomeProps = {
   /** UI용 — 바텀시트가 가리지 않는 영역 근사 bounds */
   onVisibleViewportChanged?: (viewport: RouteViewport | null) => void;
   onZoomLimitReached?: (limit: 'min' | 'max') => void;
+  onZoomLimitCleared?: () => void;
 };
 
 type RouteMarkerEntry = {
@@ -295,12 +297,14 @@ export function TmapHome({
   bottomSheetVisibleHeight = 24,
   isBottomSheetExpanded = false,
   routes = [],
+  initialViewport = null,
   selectedCourseId = null,
   markerClickRecenterToken = 0,
   onCourseMarkerClick,
   onViewportChanged,
   onVisibleViewportChanged,
   onZoomLimitReached,
+  onZoomLimitCleared,
 }: TmapHomeProps) {
   const [isMobileOrTabletViewport, setIsMobileOrTabletViewport] = useState(false);
   // [상태] 지도/마커 인스턴스 참조 관리
@@ -345,11 +349,11 @@ export function TmapHome({
   const markerHoverCountRef = useRef(0);
   const bottomSheetVisibleHeightRef = useRef(bottomSheetVisibleHeight);
   bottomSheetVisibleHeightRef.current = bottomSheetVisibleHeight;
-  const lastMarkerRecenterSignatureRef = useRef<string>('');
   const lastMapContainerSizeRef = useRef<{ width: number; height: number }>({
     width: 0,
     height: 0,
   });
+  const hasAppliedInitialViewportRef = useRef(false);
 
   const setMarkerHoverCursor = useCallback((isHover: boolean) => {
     const rootElement = rootRef.current;
@@ -500,6 +504,41 @@ export function TmapHome({
       });
     },
     [readMapBoundsViewport],
+  );
+
+  const centerMapToLocationInVisibleArea = useCallback(
+    (map: TmapMap, lat: number, lng: number) => {
+      const Tmapv3 = getTmapv3();
+      if (!Tmapv3) return;
+      map.setCenter(new Tmapv3.LatLng(lat, lng));
+
+      requestAnimationFrame(() => {
+        const liveTmap = getTmapv3();
+        if (!liveTmap) return;
+        const mapElement = document.getElementById('map_div');
+        const mapHeightPx = mapElement?.clientHeight ?? 0;
+        if (mapHeightPx <= 0) return;
+
+        const overlayPx = Math.min(Math.max(0, bottomSheetVisibleHeightRef.current), mapHeightPx);
+        if (overlayPx <= 0) return;
+
+        const bounds = map.getBounds?.();
+        const northEast = bounds?.getNorthEast?.();
+        const southWest = bounds?.getSouthWest?.();
+        if (!bounds || !northEast || !southWest) return;
+
+        const northEastLat = readCoordinateValue(northEast, 'lat');
+        const southWestLat = readCoordinateValue(southWest, 'lat');
+        if (northEastLat === null || southWestLat === null) return;
+
+        const latSpan = northEastLat - southWestLat;
+        if (!Number.isFinite(latSpan) || latSpan <= 0) return;
+
+        const latOffset = ((overlayPx / 2) / mapHeightPx) * latSpan;
+        map.setCenter(new liveTmap.LatLng(lat + latOffset, lng));
+      });
+    },
+    [readCoordinateValue],
   );
 
   const emitViewportReports = useCallback(
@@ -995,6 +1034,9 @@ export function TmapHome({
             onZoomLimitReached?.('max');
           }
         } else {
+          if (lastZoomLimitNoticeRef.current !== null) {
+            onZoomLimitCleared?.();
+          }
           lastZoomLimitNoticeRef.current = null;
         }
 
@@ -1053,6 +1095,7 @@ export function TmapHome({
       enforceMinZoomLevel,
       isMapInteractingRef,
       logMarkerCoordinateAudit,
+      onZoomLimitCleared,
       onZoomLimitReached,
       scheduleMarkerVisibilitySync,
       scheduleViewportReport,
@@ -1208,113 +1251,190 @@ export function TmapHome({
   );
   routeVisualStateHandlerRef.current = setRouteMarkerVisualState;
 
-  const syncSelectedRoutePolyline = useCallback((courseId: string | null) => {
-    routePolylineGenerationRef.current += 1;
-    const generation = routePolylineGenerationRef.current;
+  const syncSelectedRoutePolyline = useCallback(
+    (courseId: string | null) => {
+      routePolylineGenerationRef.current += 1;
+      const generation = routePolylineGenerationRef.current;
 
-    routePolylineAbortRef.current?.abort();
-    routePolylineAbortRef.current = null;
+      routePolylineAbortRef.current?.abort();
+      routePolylineAbortRef.current = null;
 
-    selectedRoutePolylineRef.current?.setMap(null);
-    selectedRoutePolylineRef.current = null;
+      selectedRoutePolylineRef.current?.setMap(null);
+      selectedRoutePolylineRef.current = null;
 
-    if (!courseId) {
-      return;
-    }
-
-    const map = mapInstance.current;
-    const Tmapv3 = getTmapv3();
-    if (!map || !Tmapv3) {
-      return;
-    }
-
-    const route = routesRef.current.find((item) => item.id === courseId);
-    if (!route) {
-      return;
-    }
-
-    const fallbackLine = dedupeConsecutiveCoordinates(
-      extractPathCoordinates(route.path_data, route.id),
-    );
-    const savedPoints = extractSavedRoutePoints(route.path_data);
-
-    const abortController = new AbortController();
-    routePolylineAbortRef.current = abortController;
-
-    const isStale = (): boolean =>
-      generation !== routePolylineGenerationRef.current || selectedRouteIdRef.current !== courseId;
-
-    void (async () => {
-      let lineCoordinates = fallbackLine;
-
-      if (savedPoints.length >= 2) {
-        try {
-          const coordsForApi = savedPoints.map((p) => ({ lat: p.lat, lng: p.lng }));
-          const result = await getPedestrianRoute(coordsForApi, abortController.signal);
-          const next = dedupeConsecutiveCoordinates(
-            result.path
-              .map((c) => ({ lat: Number(c.lat), lng: Number(c.lng) }))
-              .filter((c) => Number.isFinite(c.lat) && Number.isFinite(c.lng)),
-          );
-          if (next.length >= 2) {
-            lineCoordinates = next;
-          }
-        } catch (error) {
-          if (abortController.signal.aborted) {
-            return;
-          }
-          console.warn('[TmapHome] 보행자 경로 재계산 실패, 저장 path 사용:', error);
-        }
-      }
-
-      if (isStale()) {
+      if (!courseId) {
         return;
       }
 
-      const liveMap = mapInstance.current;
-      const liveTmap = getTmapv3();
-      if (!liveMap || !liveTmap || lineCoordinates.length < 2) {
+      const map = mapInstance.current;
+      const Tmapv3 = getTmapv3();
+      if (!map || !Tmapv3) {
         return;
       }
 
-      const latLngPath = lineCoordinates.map(
-        (coordinate) => new liveTmap.LatLng(coordinate.lat, coordinate.lng),
+      const route = routesRef.current.find((item) => item.id === courseId);
+      if (!route) {
+        return;
+      }
+
+      const fallbackLine = dedupeConsecutiveCoordinates(
+        extractPathCoordinates(route.path_data, route.id),
       );
+      const savedPoints = extractSavedRoutePoints(route.path_data);
 
-      selectedRoutePolylineRef.current = new liveTmap.Polyline({
-        map: liveMap,
-        path: latLngPath,
-        strokeColor: '#2F80FF',
-        strokeWeight: 6,
-        strokeOpacity: 0.95,
-      });
+      const abortController = new AbortController();
+      routePolylineAbortRef.current = abortController;
 
-      if (typeof liveMap.fitBounds === 'function') {
-        const latValues = lineCoordinates.map((c) => c.lat);
-        const lngValues = lineCoordinates.map((c) => c.lng);
-        const rawMinLat = Math.min(...latValues);
-        const rawMaxLat = Math.max(...latValues);
-        const rawMinLng = Math.min(...lngValues);
-        const rawMaxLng = Math.max(...lngValues);
-        const padded = padRouteBoundsForHomeFit(rawMinLat, rawMaxLat, rawMinLng, rawMaxLng);
-        const southWest = new liveTmap.LatLng(padded.minLat, padded.minLng);
-        const northEast = new liveTmap.LatLng(padded.maxLat, padded.maxLng);
+      const isStale = (): boolean =>
+        generation !== routePolylineGenerationRef.current ||
+        selectedRouteIdRef.current !== courseId;
 
-        const LatLngBounds = (
-          liveTmap as unknown as { LatLngBounds?: new (sw: unknown, ne: unknown) => unknown }
-        ).LatLngBounds;
+      void (async () => {
+        let lineCoordinates = fallbackLine;
 
-        if (typeof LatLngBounds === 'function') {
-          const bounds = new LatLngBounds(southWest, northEast);
-          liveMap.fitBounds(bounds, ROUTE_POLYLINE_FIT_BOUNDS_PADDING_PX);
-        } else {
-          liveMap.fitBounds(southWest, northEast);
+        if (savedPoints.length >= 2) {
+          try {
+            const coordsForApi = savedPoints.map((p) => ({ lat: p.lat, lng: p.lng }));
+            const result = await getPedestrianRoute(coordsForApi, abortController.signal);
+            const next = dedupeConsecutiveCoordinates(
+              result.path
+                .map((c) => ({ lat: Number(c.lat), lng: Number(c.lng) }))
+                .filter((c) => Number.isFinite(c.lat) && Number.isFinite(c.lng)),
+            );
+            if (next.length >= 2) {
+              lineCoordinates = next;
+            }
+          } catch (error) {
+            if (abortController.signal.aborted) {
+              return;
+            }
+            console.warn('[TmapHome] 보행자 경로 재계산 실패, 저장 path 사용:', error);
+          }
         }
-        clampRoutePolylineFitZoom(liveMap);
-        clampHomeMapZoom(liveMap);
+
+        if (isStale()) {
+          return;
+        }
+
+        const liveMap = mapInstance.current;
+        const liveTmap = getTmapv3();
+        if (!liveMap || !liveTmap || lineCoordinates.length < 2) {
+          return;
+        }
+
+        const latLngPath = lineCoordinates.map(
+          (coordinate) => new liveTmap.LatLng(coordinate.lat, coordinate.lng),
+        );
+
+        selectedRoutePolylineRef.current = new liveTmap.Polyline({
+          map: liveMap,
+          path: latLngPath,
+          strokeColor: '#2F80FF',
+          strokeWeight: 6,
+          strokeOpacity: 0.95,
+        });
+
+        if (typeof liveMap.fitBounds === 'function') {
+          const latValues = lineCoordinates.map((c) => c.lat);
+          const lngValues = lineCoordinates.map((c) => c.lng);
+          const rawMinLat = Math.min(...latValues);
+          const rawMaxLat = Math.max(...latValues);
+          const rawMinLng = Math.min(...lngValues);
+          const rawMaxLng = Math.max(...lngValues);
+          const rawCenterLat = (rawMinLat + rawMaxLat) / 2;
+          const rawCenterLng = (rawMinLng + rawMaxLng) / 2;
+          const padded = padRouteBoundsForHomeFit(rawMinLat, rawMaxLat, rawMinLng, rawMaxLng);
+          const southWest = new liveTmap.LatLng(padded.minLat, padded.minLng);
+          const northEast = new liveTmap.LatLng(padded.maxLat, padded.maxLng);
+
+          const LatLngBounds = (
+            liveTmap as unknown as { LatLngBounds?: new (sw: unknown, ne: unknown) => unknown }
+          ).LatLngBounds;
+
+          if (typeof LatLngBounds === 'function') {
+            const bounds = new LatLngBounds(southWest, northEast);
+            liveMap.fitBounds(bounds, ROUTE_POLYLINE_FIT_BOUNDS_PADDING_PX);
+          } else {
+            liveMap.fitBounds(southWest, northEast);
+          }
+
+          requestAnimationFrame(() => {
+            if (isStale()) {
+              return;
+            }
+            const mapAfterFit = mapInstance.current;
+            const tmapAfterFit = getTmapv3();
+            if (!mapAfterFit || !tmapAfterFit) {
+              return;
+            }
+            const mapElement = document.getElementById('map_div');
+            const mapHeightPx = mapElement?.clientHeight ?? 0;
+            if (mapHeightPx <= 0) {
+              return;
+            }
+            const overlayPx = Math.min(
+              Math.max(0, bottomSheetVisibleHeightRef.current),
+              mapHeightPx,
+            );
+            if (overlayPx <= 0) {
+              return;
+            }
+
+            const boundsAfterFit = mapAfterFit.getBounds?.();
+            const northEastAfterFit = boundsAfterFit?.getNorthEast?.();
+            const southWestAfterFit = boundsAfterFit?.getSouthWest?.();
+            if (!boundsAfterFit || !northEastAfterFit || !southWestAfterFit) {
+              return;
+            }
+
+            const northEastLat = readCoordinateValue(northEastAfterFit, 'lat');
+            const southWestLat = readCoordinateValue(southWestAfterFit, 'lat');
+            if (northEastLat === null || southWestLat === null) {
+              return;
+            }
+            const latSpan = northEastLat - southWestLat;
+            if (!Number.isFinite(latSpan) || latSpan <= 0) {
+              return;
+            }
+
+            const centerYOffsetPx = overlayPx / 2;
+            const latOffset = (centerYOffsetPx / mapHeightPx) * latSpan;
+            mapAfterFit.setCenter(new tmapAfterFit.LatLng(rawCenterLat + latOffset, rawCenterLng));
+          });
+
+          clampRoutePolylineFitZoom(liveMap);
+          clampHomeMapZoom(liveMap);
+        }
+      })();
+    },
+    [readCoordinateValue],
+  );
+
+  const applyInitialViewport = useCallback(
+    (map: TmapMap) => {
+      if (hasAppliedInitialViewportRef.current) return;
+      const viewport = initialViewport;
+      const Tmapv3 = getTmapv3();
+      if (!viewport || !Tmapv3) return;
+      if (typeof map.fitBounds !== 'function') return;
+
+      const southWest = new Tmapv3.LatLng(viewport.southWestLat, viewport.southWestLng);
+      const northEast = new Tmapv3.LatLng(viewport.northEastLat, viewport.northEastLng);
+      const LatLngBounds = (
+        Tmapv3 as unknown as { LatLngBounds?: new (sw: unknown, ne: unknown) => unknown }
+      ).LatLngBounds;
+
+      if (typeof LatLngBounds === 'function') {
+        const bounds = new LatLngBounds(southWest, northEast);
+        map.fitBounds(bounds, 0);
+      } else {
+        map.fitBounds(southWest, northEast);
       }
-    })();
-  }, []);
+      clampHomeMapZoom(map);
+      hasAppliedInitialViewportRef.current = true;
+    },
+    [initialViewport],
+  );
 
   /** 전체 코스 마커·폴리라인·클러스터 초기화(필요 시 effect/핸들러에서 호출) */
   const _clearRouteMarkers = useCallback(() => {
@@ -1341,7 +1461,7 @@ export function TmapHome({
   }, [tearDownRouteMarkerCluster]);
 
   const syncSelectedMarkerVisual = useCallback(
-    (nextSelectedCourseId: string | null) => {
+    (nextSelectedCourseId: string | null, shouldFocusSelectedCourse: boolean) => {
       const previousSelectedId = selectedRouteIdRef.current;
 
       if (previousSelectedId && previousSelectedId !== nextSelectedCourseId) {
@@ -1353,7 +1473,7 @@ export function TmapHome({
       if (nextSelectedCourseId) {
         setRouteMarkerVisualState(nextSelectedCourseId, 'clicked');
       }
-      syncSelectedRoutePolyline(nextSelectedCourseId);
+      syncSelectedRoutePolyline(shouldFocusSelectedCourse ? nextSelectedCourseId : null);
     },
     [setRouteMarkerVisualState, syncSelectedRoutePolyline],
   );
@@ -1506,11 +1626,8 @@ export function TmapHome({
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        const Tmapv3 = getTmapv3();
-        if (Tmapv3) {
-          map.setCenter(new Tmapv3.LatLng(latitude, longitude));
-          createCustomMarker(map, latitude, longitude);
-        }
+        centerMapToLocationInVisibleArea(map, latitude, longitude);
+        createCustomMarker(map, latitude, longitude);
       },
       (error) => {
         console.error('위치 갱신 실패:', error);
@@ -1532,15 +1649,6 @@ export function TmapHome({
           ? Math.max(MIN_ZOOM_LEVEL, runtimeZoom + delta)
           : Math.min(MAX_ZOOM_LEVEL, runtimeZoom + delta);
       if (nextZoom === runtimeZoom) return;
-      const reachedMin = nextZoom === MIN_ZOOM_LEVEL;
-      const reachedMax = nextZoom === MAX_ZOOM_LEVEL;
-      const reachedLimit = reachedMin || reachedMax;
-      if (reachedLimit) {
-        lastZoomLimitNoticeRef.current = reachedMax ? 'max' : 'min';
-        onZoomLimitReached?.(reachedMax ? 'max' : 'min');
-      } else {
-        lastZoomLimitNoticeRef.current = null;
-      }
       // Tmap이 제공하는 zoomIn/zoomOut을 우선 사용해 부드러운 전환을 유도한다.
       if (delta > 0 && typeof map.zoomIn === 'function') {
         map.zoomIn();
@@ -1554,7 +1662,7 @@ export function TmapHome({
       // zoomIn/zoomOut 미지원 런타임에서는 애니메이션 옵션을 포함해 폴백한다.
       map.setZoom(nextZoom, { animation: true, animate: true, duration: 200 });
     },
-    [onZoomLimitReached],
+    [],
   );
 
   // [이벤트] 휠 줌을 버튼과 동일한 제한 로직으로 통일
@@ -1603,6 +1711,10 @@ export function TmapHome({
       lastAppliedZoomRef.current = map.getZoom();
       createCustomMarker(map, lat, lng);
       mapInstance.current = map;
+      if (!initialViewport) {
+        centerMapToLocationInVisibleArea(map, lat, lng);
+      }
+      applyInitialViewport(map);
       enforceMinZoomLevel(map);
       registerMapListeners(map);
       scheduleViewportReport(map, 500);
@@ -1701,8 +1813,11 @@ export function TmapHome({
       lastVisibleViewportReportRef.current = null;
     };
   }, [
+    applyInitialViewport,
+    centerMapToLocationInVisibleArea,
     emitViewportReports,
     enforceMinZoomLevel,
+    initialViewport,
     registerMapListeners,
     scheduleMarkerVisibilitySync,
     scheduleViewportReport,
@@ -1743,80 +1858,18 @@ export function TmapHome({
 
   useEffect(() => {
     // [동기화] 외부 선택 상태(selectedCourseId)와 마커 clicked 상태 정합성 유지
-    syncSelectedMarkerVisual(selectedCourseId);
+    const shouldFocusSelectedCourse = Boolean(selectedCourseId) && markerClickRecenterToken > 0;
+    syncSelectedMarkerVisual(selectedCourseId, shouldFocusSelectedCourse);
     const map = mapInstance.current;
     if (map) {
       scheduleMarkerVisibilitySync(map);
     }
-  }, [selectedCourseId, scheduleMarkerVisibilitySync, syncSelectedMarkerVisual]);
-
-  // [마커 클릭] 바텀시트 높이가 반영된 뒤, 보이는 지도 영역의 시각적 중앙에 마커가 오도록 1회만 패닝
-  useEffect(() => {
-    if (!markerClickRecenterToken || !selectedCourseId) {
-      return;
-    }
-
-    const sheetPx = bottomSheetVisibleHeightRef.current;
-    if (sheetPx <= 24) {
-      return;
-    }
-
-    const completionKey = `${markerClickRecenterToken}|${selectedCourseId}`;
-    if (lastMarkerRecenterSignatureRef.current === completionKey) {
-      return;
-    }
-    lastMarkerRecenterSignatureRef.current = completionKey;
-
-    const map = mapInstance.current;
-    const Tmapv3 = getTmapv3();
-    if (!map || !Tmapv3) {
-      return;
-    }
-
-    const route = routesRef.current.find((item) => item.id === selectedCourseId);
-    const entry = routeMarkerMapRef.current.get(selectedCourseId);
-    const routeStart = route ? resolveRouteStartForMapMarker(route) : null;
-    const start = routeStart ?? (entry ? { lat: entry.lat, lng: entry.lng } : null);
-    if (!start) {
-      return;
-    }
-
-    map.setCenter(new Tmapv3.LatLng(start.lat, start.lng));
-
-    requestAnimationFrame(() => {
-      const liveMap = mapInstance.current;
-      const liveTmap = getTmapv3();
-      if (!liveMap || !liveTmap) {
-        return;
-      }
-
-      const liveSheetPx = Math.max(24, bottomSheetVisibleHeightRef.current);
-      const mapElement = document.getElementById('map_div');
-      const mapHeightPx = mapElement?.clientHeight ?? 0;
-      if (mapHeightPx <= 0) {
-        return;
-      }
-
-      const bounds = liveMap.getBounds?.();
-      const northEast = bounds?.getNorthEast?.();
-      const southWest = bounds?.getSouthWest?.();
-      if (!bounds || !northEast || !southWest) {
-        return;
-      }
-
-      const northEastLat = readCoordinateValue(northEast, 'lat');
-      const southWestLat = readCoordinateValue(southWest, 'lat');
-      if (northEastLat === null || southWestLat === null) {
-        return;
-      }
-
-      const latSpan = northEastLat - southWestLat;
-      const pixelOffsetY = -(liveSheetPx / 2);
-      const adjustedLat = start.lat + (pixelOffsetY / mapHeightPx) * latSpan;
-
-      liveMap.setCenter(new liveTmap.LatLng(adjustedLat, start.lng));
-    });
-  }, [markerClickRecenterToken, selectedCourseId, bottomSheetVisibleHeight, readCoordinateValue]);
+  }, [
+    markerClickRecenterToken,
+    selectedCourseId,
+    scheduleMarkerVisibilitySync,
+    syncSelectedMarkerVisual,
+  ]);
 
   // 바텀시트 높이 변경 시: 가시 viewport만 갱신(마커/클러스터 생명주기는 건드리지 않음)
   useEffect(() => {
