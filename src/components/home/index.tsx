@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Icon } from '@/commons/components/icons';
@@ -30,6 +30,41 @@ const TAB_ITEMS = [
   { label: '10km~', variant: 'orange' as const, category: 'OVER_10' as const },
 ];
 
+const HOME_QUERY_KEYS = {
+  selectedCourseId: 'courseId',
+  categories: 'categories',
+  sheet: 'sheet',
+  viewport: {
+    northEastLat: 'neLat',
+    northEastLng: 'neLng',
+    southWestLat: 'swLat',
+    southWestLng: 'swLng',
+  },
+} as const;
+
+function parseViewportFromSearchParams(searchParams: URLSearchParams): RouteViewport | null {
+  const northEastLat = Number(searchParams.get(HOME_QUERY_KEYS.viewport.northEastLat));
+  const northEastLng = Number(searchParams.get(HOME_QUERY_KEYS.viewport.northEastLng));
+  const southWestLat = Number(searchParams.get(HOME_QUERY_KEYS.viewport.southWestLat));
+  const southWestLng = Number(searchParams.get(HOME_QUERY_KEYS.viewport.southWestLng));
+  if (
+    !Number.isFinite(northEastLat) ||
+    !Number.isFinite(northEastLng) ||
+    !Number.isFinite(southWestLat) ||
+    !Number.isFinite(southWestLng)
+  ) {
+    return null;
+  }
+  return { northEastLat, northEastLng, southWestLat, southWestLng };
+}
+
+function serializeViewportToSearchParams(params: URLSearchParams, viewport: RouteViewport): void {
+  params.set(HOME_QUERY_KEYS.viewport.northEastLat, viewport.northEastLat.toFixed(6));
+  params.set(HOME_QUERY_KEYS.viewport.northEastLng, viewport.northEastLng.toFixed(6));
+  params.set(HOME_QUERY_KEYS.viewport.southWestLat, viewport.southWestLat.toFixed(6));
+  params.set(HOME_QUERY_KEYS.viewport.southWestLng, viewport.southWestLng.toFixed(6));
+}
+
 export function Home() {
   type HomeToast = {
     type: 'no-course' | 'zoom-limit';
@@ -51,6 +86,9 @@ export function Home() {
   const [visibleRouteViewport, setVisibleRouteViewport] = useState<RouteViewport | null>(null);
   const [frozenVisibleRouteViewport, setFrozenVisibleRouteViewport] =
     useState<RouteViewport | null>(null);
+  const [restoredInitialViewport, setRestoredInitialViewport] = useState<RouteViewport | null>(
+    null,
+  );
   const [referenceLocation, setReferenceLocation] =
     useState<ReferenceLocation>(SEOUL_CITY_HALL_REFERENCE);
   const effectiveQueryViewport = isSheetExpanded
@@ -58,11 +96,25 @@ export function Home() {
     : visibleRouteViewport;
   const { routes, allRoutes, isLoading, errorMessage } = useRoutes(effectiveQueryViewport);
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const previousQueryViewportRef = useRef<RouteViewport | null>(null);
   const noCourseToastDelayTimerRef = useRef<number | null>(null);
+  const zoomLimitToastHideTimerRef = useRef<number | null>(null);
+  const hasRestoredFromQueryRef = useRef(false);
+  const lastSyncedQueryRef = useRef('');
 
   const showHomeToast = useCallback((type: HomeToast['type'], message: string) => {
     setHomeToast({ type, message });
+    if (type !== 'zoom-limit') return;
+    if (zoomLimitToastHideTimerRef.current !== null) {
+      window.clearTimeout(zoomLimitToastHideTimerRef.current);
+      zoomLimitToastHideTimerRef.current = null;
+    }
+    zoomLimitToastHideTimerRef.current = window.setTimeout(() => {
+      setHomeToast((previous) => (previous?.type === 'zoom-limit' ? null : previous));
+      zoomLimitToastHideTimerRef.current = null;
+    }, 1500);
   }, []);
 
   const handleZoomLimitReached = useCallback(
@@ -75,6 +127,10 @@ export function Home() {
     },
     [showHomeToast],
   );
+
+  const handleZoomLimitCleared = useCallback(() => {
+    setHomeToast((previous) => (previous?.type === 'zoom-limit' ? null : previous));
+  }, []);
 
   const isSameViewport = useCallback((left: RouteViewport | null, right: RouteViewport | null) => {
     if (!left || !right) return false;
@@ -97,6 +153,82 @@ export function Home() {
     },
     [isSameViewport],
   );
+
+  useEffect(() => {
+    if (hasRestoredFromQueryRef.current) return;
+    const selectedCourseFromQuery = searchParams.get(HOME_QUERY_KEYS.selectedCourseId);
+    const categoriesFromQuery = searchParams.get(HOME_QUERY_KEYS.categories);
+    const sheetFromQuery = searchParams.get(HOME_QUERY_KEYS.sheet);
+    const viewportFromQuery = parseViewportFromSearchParams(searchParams);
+    const hasUiStateQuery =
+      Boolean(selectedCourseFromQuery) ||
+      Boolean(categoriesFromQuery) ||
+      sheetFromQuery === 'expanded';
+
+    if (selectedCourseFromQuery) {
+      setSelectedCourseId(selectedCourseFromQuery);
+    }
+    if (categoriesFromQuery) {
+      const categorySet = new Set<DistanceCategory>();
+      categoriesFromQuery.split(',').forEach((category) => {
+        if (TAB_ITEMS.some((item) => item.category === category)) {
+          categorySet.add(category as DistanceCategory);
+        }
+      });
+      setSelectedCategories(categorySet);
+    }
+    if (sheetFromQuery === 'expanded') {
+      setIsSheetExpanded(true);
+    }
+    if (viewportFromQuery && hasUiStateQuery) {
+      setVisibleRouteViewport(viewportFromQuery);
+      setFrozenVisibleRouteViewport(viewportFromQuery);
+      setRestoredInitialViewport(viewportFromQuery);
+    }
+    hasRestoredFromQueryRef.current = true;
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!hasRestoredFromQueryRef.current) return;
+
+    const params = new URLSearchParams();
+    if (selectedCourseId) {
+      params.set(HOME_QUERY_KEYS.selectedCourseId, selectedCourseId);
+    }
+    if (selectedCategories.size > 0) {
+      const encodedCategories = TAB_ITEMS.map((item) => item.category).filter((category) =>
+        selectedCategories.has(category),
+      );
+      params.set(HOME_QUERY_KEYS.categories, encodedCategories.join(','));
+    }
+    if (isSheetExpanded) {
+      params.set(HOME_QUERY_KEYS.sheet, 'expanded');
+    }
+    const hasExplicitUiState =
+      Boolean(selectedCourseId) || selectedCategories.size > 0 || isSheetExpanded;
+    if (effectiveQueryViewport && hasExplicitUiState) {
+      serializeViewportToSearchParams(params, effectiveQueryViewport);
+    }
+
+    const nextQuery = params.toString();
+    const currentQuery = searchParams.toString();
+    if (nextQuery === currentQuery) {
+      lastSyncedQueryRef.current = nextQuery;
+      return;
+    }
+    if (lastSyncedQueryRef.current === nextQuery) return;
+    lastSyncedQueryRef.current = nextQuery;
+    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+    router.replace(nextUrl, { scroll: false });
+  }, [
+    effectiveQueryViewport,
+    isSheetExpanded,
+    pathname,
+    router,
+    searchParams,
+    selectedCategories,
+    selectedCourseId,
+  ]);
 
   useEffect(() => {
     if (!isSheetExpanded && visibleRouteViewport) {
@@ -133,7 +265,7 @@ export function Home() {
     noCourseToastDelayTimerRef.current = window.setTimeout(() => {
       showHomeToast('no-course', '해당 영역에 등록된 코스가 없습니다.');
       noCourseToastDelayTimerRef.current = null;
-    }, 500);
+    }, 1500);
 
     return () => {
       if (noCourseToastDelayTimerRef.current !== null) {
@@ -147,6 +279,9 @@ export function Home() {
     return () => {
       if (noCourseToastDelayTimerRef.current !== null) {
         window.clearTimeout(noCourseToastDelayTimerRef.current);
+      }
+      if (zoomLimitToastHideTimerRef.current !== null) {
+        window.clearTimeout(zoomLimitToastHideTimerRef.current);
       }
     };
   }, []);
@@ -285,12 +420,14 @@ export function Home() {
             bottomSheetVisibleHeight={sheetVisibleHeight}
             isBottomSheetExpanded={isSheetExpanded}
             routes={filteredRoutes}
+            initialViewport={restoredInitialViewport}
             selectedCourseId={selectedCourseId}
             markerClickRecenterToken={markerClickRecenterToken}
             onCourseMarkerClick={handleCourseMarkerClick}
             onViewportChanged={handleViewportChanged}
             onVisibleViewportChanged={handleVisibleRouteViewportChanged}
             onZoomLimitReached={handleZoomLimitReached}
+            onZoomLimitCleared={handleZoomLimitCleared}
           />
         </div>
         {homeToast ? (
