@@ -317,6 +317,7 @@ export function TmapHome({
   /** 선택 코스 폴리라인 요청 무효화(연속 클릭·선택 해제) */
   const routePolylineGenerationRef = useRef(0);
   const routePolylineAbortRef = useRef<AbortController | null>(null);
+  const selectedPolylineRetryTimerRef = useRef<number | null>(null);
   const routeMarkerMapRef = useRef<Map<string, RouteMarkerEntry>>(new Map());
   const routeMarkerClusterRef = useRef<TmapMarkerCluster | null>(null);
   /** 확장 로더 유무와 무관하게, 마지막으로 적용한 코스 마커 표시 방식 */
@@ -329,6 +330,7 @@ export function TmapHome({
   /** syncRouteMarkers 가 실제 데이터 변경 시에만 돌도록 마지막 동기화 서명 */
   const routesSyncSigRef = useRef<string | null>(null);
   const selectedRouteIdRef = useRef<string | null>(null);
+  const selectedRouteDataReadyRef = useRef(false);
   const viewportReportTimerRef = useRef<number | null>(null);
   const viewportSyncIntervalRef = useRef<number | null>(null);
   const mapListenersRegisteredRef = useRef(false);
@@ -536,7 +538,7 @@ export function TmapHome({
         if (!Number.isFinite(latSpan) || latSpan <= 0) return;
 
         // 바텀시트가 가리는 하단만큼, 지도 중심을 남쪽으로 내려야 타깃이 시각적 중앙(위쪽)으로 올라온다.
-        const latOffset = ((overlayPx / 2) / mapHeightPx) * latSpan;
+        const latOffset = (overlayPx / 2 / mapHeightPx) * latSpan;
         map.setCenter(new liveTmap.LatLng(lat - latOffset, lng));
       });
     },
@@ -1254,28 +1256,45 @@ export function TmapHome({
   routeVisualStateHandlerRef.current = setRouteMarkerVisualState;
 
   const syncSelectedRoutePolyline = useCallback(
-    (courseId: string | null) => {
+    (courseId: string | null, retryCount = 0) => {
+      if (selectedPolylineRetryTimerRef.current !== null) {
+        window.clearTimeout(selectedPolylineRetryTimerRef.current);
+        selectedPolylineRetryTimerRef.current = null;
+      }
       routePolylineGenerationRef.current += 1;
       const generation = routePolylineGenerationRef.current;
 
       routePolylineAbortRef.current?.abort();
       routePolylineAbortRef.current = null;
 
-      selectedRoutePolylineRef.current?.setMap(null);
-      selectedRoutePolylineRef.current = null;
-
       if (!courseId) {
+        selectedRoutePolylineRef.current?.setMap(null);
+        selectedRoutePolylineRef.current = null;
         return;
       }
 
       const map = mapInstance.current;
       const Tmapv3 = getTmapv3();
       if (!map || !Tmapv3) {
+        if (retryCount < 2) {
+          selectedPolylineRetryTimerRef.current = window.setTimeout(() => {
+            selectedPolylineRetryTimerRef.current = null;
+            if (selectedRouteIdRef.current !== courseId) return;
+            syncSelectedRoutePolyline(courseId, retryCount + 1);
+          }, 120);
+        }
         return;
       }
 
       const route = routesRef.current.find((item) => item.id === courseId);
       if (!route) {
+        if (retryCount < 2) {
+          selectedPolylineRetryTimerRef.current = window.setTimeout(() => {
+            selectedPolylineRetryTimerRef.current = null;
+            if (selectedRouteIdRef.current !== courseId) return;
+            syncSelectedRoutePolyline(courseId, retryCount + 1);
+          }, 120);
+        }
         return;
       }
 
@@ -1328,13 +1347,16 @@ export function TmapHome({
           (coordinate) => new liveTmap.LatLng(coordinate.lat, coordinate.lng),
         );
 
-        selectedRoutePolylineRef.current = new liveTmap.Polyline({
+        const previousPolyline = selectedRoutePolylineRef.current;
+        const nextPolyline = new liveTmap.Polyline({
           map: liveMap,
           path: latLngPath,
           strokeColor: '#2F80FF',
           strokeWeight: 6,
           strokeOpacity: 0.95,
         });
+        selectedRoutePolylineRef.current = nextPolyline;
+        previousPolyline?.setMap(null);
 
         if (typeof liveMap.fitBounds === 'function') {
           const latValues = lineCoordinates.map((c) => c.lat);
@@ -1451,6 +1473,10 @@ export function TmapHome({
     routePolylineGenerationRef.current += 1;
     routePolylineAbortRef.current?.abort();
     routePolylineAbortRef.current = null;
+    if (selectedPolylineRetryTimerRef.current !== null) {
+      window.clearTimeout(selectedPolylineRetryTimerRef.current);
+      selectedPolylineRetryTimerRef.current = null;
+    }
     selectedRoutePolylineRef.current?.setMap(null);
     selectedRoutePolylineRef.current = null;
     routeMarkerMapRef.current.forEach((entry) => {
@@ -1640,33 +1666,30 @@ export function TmapHome({
     );
   };
 
-  const adjustZoomLevel = useCallback(
-    (delta: 1 | -1) => {
-      const map = mapInstance.current;
-      if (!map) return;
+  const adjustZoomLevel = useCallback((delta: 1 | -1) => {
+    const map = mapInstance.current;
+    if (!map) return;
 
-      const runtimeZoom = map.getZoom();
-      if (typeof runtimeZoom !== 'number') return;
-      const nextZoom =
-        delta < 0
-          ? Math.max(MIN_ZOOM_LEVEL, runtimeZoom + delta)
-          : Math.min(MAX_ZOOM_LEVEL, runtimeZoom + delta);
-      if (nextZoom === runtimeZoom) return;
-      // Tmap이 제공하는 zoomIn/zoomOut을 우선 사용해 부드러운 전환을 유도한다.
-      if (delta > 0 && typeof map.zoomIn === 'function') {
-        map.zoomIn();
-        return;
-      }
-      if (delta < 0 && typeof map.zoomOut === 'function') {
-        map.zoomOut();
-        return;
-      }
+    const runtimeZoom = map.getZoom();
+    if (typeof runtimeZoom !== 'number') return;
+    const nextZoom =
+      delta < 0
+        ? Math.max(MIN_ZOOM_LEVEL, runtimeZoom + delta)
+        : Math.min(MAX_ZOOM_LEVEL, runtimeZoom + delta);
+    if (nextZoom === runtimeZoom) return;
+    // Tmap이 제공하는 zoomIn/zoomOut을 우선 사용해 부드러운 전환을 유도한다.
+    if (delta > 0 && typeof map.zoomIn === 'function') {
+      map.zoomIn();
+      return;
+    }
+    if (delta < 0 && typeof map.zoomOut === 'function') {
+      map.zoomOut();
+      return;
+    }
 
-      // zoomIn/zoomOut 미지원 런타임에서는 애니메이션 옵션을 포함해 폴백한다.
-      map.setZoom(nextZoom, { animation: true, animate: true, duration: 200 });
-    },
-    [],
-  );
+    // zoomIn/zoomOut 미지원 런타임에서는 애니메이션 옵션을 포함해 폴백한다.
+    map.setZoom(nextZoom, { animation: true, animate: true, duration: 200 });
+  }, []);
 
   // [이벤트] 휠 줌을 버튼과 동일한 제한 로직으로 통일
   const handleMapWheel = useCallback(
@@ -1690,6 +1713,22 @@ export function TmapHome({
   useEffect(() => {
     routesRef.current = routes;
   }, [routes]);
+
+  useEffect(() => {
+    if (!selectedCourseId) {
+      selectedRouteDataReadyRef.current = false;
+      return;
+    }
+
+    const isSelectedRouteReady = routes.some((route) => route.id === selectedCourseId);
+    if (!isSelectedRouteReady) return;
+    if (selectedRouteDataReadyRef.current) return;
+    selectedRouteDataReadyRef.current = true;
+
+    // 뒤로 복귀 시 선택 코스 데이터가 늦게 들어와도 폴리라인 동기화를 1회 보장한다.
+    const shouldFocusSelectedCourse = markerClickRecenterToken > 0;
+    syncSelectedMarkerVisual(selectedCourseId, shouldFocusSelectedCourse);
+  }, [markerClickRecenterToken, routes, selectedCourseId, syncSelectedMarkerVisual]);
 
   useEffect(() => {
     // [초기화] 지도 라이브러리 로드 대기 및 최초 지도 생성
@@ -1782,6 +1821,10 @@ export function TmapHome({
       routePolylineAbortRef.current?.abort();
       routePolylineAbortRef.current = null;
       routePolylineGenerationRef.current += 1;
+      if (selectedPolylineRetryTimerRef.current !== null) {
+        window.clearTimeout(selectedPolylineRetryTimerRef.current);
+        selectedPolylineRetryTimerRef.current = null;
+      }
       selectedRoutePolylineRef.current?.setMap(null);
       routeMarkerMap.clear();
       mapInstance.current = null;
@@ -1863,6 +1906,7 @@ export function TmapHome({
   useEffect(() => {
     // [동기화] 외부 선택 상태(selectedCourseId)와 마커 clicked 상태 정합성 유지
     // 뒤로 복귀 직후에는 지도/코스 데이터 준비 타이밍이 엇갈릴 수 있어 재시도 트리거를 넓힌다.
+    selectedRouteDataReadyRef.current = false;
     const shouldFocusSelectedCourse = Boolean(selectedCourseId) && markerClickRecenterToken > 0;
     syncSelectedMarkerVisual(selectedCourseId, shouldFocusSelectedCourse);
     const map = mapInstance.current;
@@ -1872,7 +1916,6 @@ export function TmapHome({
   }, [
     mapReadyToken,
     markerClickRecenterToken,
-    routes,
     selectedCourseId,
     scheduleMarkerVisibilitySync,
     syncSelectedMarkerVisual,
