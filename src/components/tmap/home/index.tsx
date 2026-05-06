@@ -534,8 +534,9 @@ export function TmapHome({
         const latSpan = northEastLat - southWestLat;
         if (!Number.isFinite(latSpan) || latSpan <= 0) return;
 
+        // 바텀시트가 가리는 하단만큼, 지도 중심을 남쪽으로 내려야 타깃이 시각적 중앙(위쪽)으로 올라온다.
         const latOffset = ((overlayPx / 2) / mapHeightPx) * latSpan;
-        map.setCenter(new liveTmap.LatLng(lat + latOffset, lng));
+        map.setCenter(new liveTmap.LatLng(lat - latOffset, lng));
       });
     },
     [readCoordinateValue],
@@ -1398,8 +1399,9 @@ export function TmapHome({
             }
 
             const centerYOffsetPx = overlayPx / 2;
+            // 폴리라인 중심도 동일하게 남쪽 보정해, 경로가 보이는 영역의 중앙에 오도록 맞춘다.
             const latOffset = (centerYOffsetPx / mapHeightPx) * latSpan;
-            mapAfterFit.setCenter(new tmapAfterFit.LatLng(rawCenterLat + latOffset, rawCenterLng));
+            mapAfterFit.setCenter(new tmapAfterFit.LatLng(rawCenterLat - latOffset, rawCenterLng));
           });
 
           clampRoutePolylineFitZoom(liveMap);
