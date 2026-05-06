@@ -34,35 +34,21 @@ const HOME_QUERY_KEYS = {
   selectedCourseId: 'courseId',
   categories: 'categories',
   sheet: 'sheet',
-  viewport: {
-    northEastLat: 'neLat',
-    northEastLng: 'neLng',
-    southWestLat: 'swLat',
-    southWestLng: 'swLng',
-  },
 } as const;
 
-function parseViewportFromSearchParams(searchParams: URLSearchParams): RouteViewport | null {
-  const northEastLat = Number(searchParams.get(HOME_QUERY_KEYS.viewport.northEastLat));
-  const northEastLng = Number(searchParams.get(HOME_QUERY_KEYS.viewport.northEastLng));
-  const southWestLat = Number(searchParams.get(HOME_QUERY_KEYS.viewport.southWestLat));
-  const southWestLng = Number(searchParams.get(HOME_QUERY_KEYS.viewport.southWestLng));
-  if (
-    !Number.isFinite(northEastLat) ||
-    !Number.isFinite(northEastLng) ||
-    !Number.isFinite(southWestLat) ||
-    !Number.isFinite(southWestLng)
-  ) {
-    return null;
-  }
-  return { northEastLat, northEastLng, southWestLat, southWestLng };
-}
+const HOME_SESSION_KEYS = {
+  savedViewport: 'homeSavedViewport',
+  restoreViewportOnce: 'homeRestoreViewportOnce',
+} as const;
 
-function serializeViewportToSearchParams(params: URLSearchParams, viewport: RouteViewport): void {
-  params.set(HOME_QUERY_KEYS.viewport.northEastLat, viewport.northEastLat.toFixed(6));
-  params.set(HOME_QUERY_KEYS.viewport.northEastLng, viewport.northEastLng.toFixed(6));
-  params.set(HOME_QUERY_KEYS.viewport.southWestLat, viewport.southWestLat.toFixed(6));
-  params.set(HOME_QUERY_KEYS.viewport.southWestLng, viewport.southWestLng.toFixed(6));
+function isValidRouteViewport(viewport: RouteViewport | null): viewport is RouteViewport {
+  if (!viewport) return false;
+  return (
+    Number.isFinite(viewport.northEastLat) &&
+    Number.isFinite(viewport.northEastLng) &&
+    Number.isFinite(viewport.southWestLat) &&
+    Number.isFinite(viewport.southWestLng)
+  );
 }
 
 export function Home() {
@@ -103,6 +89,14 @@ export function Home() {
   const zoomLimitToastHideTimerRef = useRef<number | null>(null);
   const hasRestoredFromQueryRef = useRef(false);
   const lastSyncedQueryRef = useRef('');
+  const navigationTypeRef = useRef<PerformanceNavigationTiming['type'] | null>(null);
+
+  if (navigationTypeRef.current === null && typeof window !== 'undefined') {
+    const [navigationEntry] = performance.getEntriesByType(
+      'navigation',
+    ) as PerformanceNavigationTiming[];
+    navigationTypeRef.current = navigationEntry?.type ?? 'navigate';
+  }
 
   const showHomeToast = useCallback((type: HomeToast['type'], message: string) => {
     setHomeToast({ type, message });
@@ -150,6 +144,11 @@ export function Home() {
       setVisibleRouteViewport((previous) =>
         isSameViewport(previous, nextViewport) ? previous : { ...nextViewport },
       );
+
+      if (typeof window !== 'undefined' && isValidRouteViewport(nextViewport)) {
+        // 상세 진입 직전 타이밍 이슈를 피하려고 홈에서 관측되는 최신 viewport를 항상 동기화한다.
+        window.sessionStorage.setItem(HOME_SESSION_KEYS.savedViewport, JSON.stringify(nextViewport));
+      }
     },
     [isSameViewport],
   );
@@ -159,12 +158,6 @@ export function Home() {
     const selectedCourseFromQuery = searchParams.get(HOME_QUERY_KEYS.selectedCourseId);
     const categoriesFromQuery = searchParams.get(HOME_QUERY_KEYS.categories);
     const sheetFromQuery = searchParams.get(HOME_QUERY_KEYS.sheet);
-    const viewportFromQuery = parseViewportFromSearchParams(searchParams);
-    const hasUiStateQuery =
-      Boolean(selectedCourseFromQuery) ||
-      Boolean(categoriesFromQuery) ||
-      sheetFromQuery === 'expanded';
-
     if (selectedCourseFromQuery) {
       setSelectedCourseId(selectedCourseFromQuery);
     }
@@ -180,10 +173,28 @@ export function Home() {
     if (sheetFromQuery === 'expanded') {
       setIsSheetExpanded(true);
     }
-    if (viewportFromQuery && hasUiStateQuery) {
-      setVisibleRouteViewport(viewportFromQuery);
-      setFrozenVisibleRouteViewport(viewportFromQuery);
-      setRestoredInitialViewport(viewportFromQuery);
+    const isReloadNavigation = navigationTypeRef.current === 'reload';
+    const shouldRestoreViewport = !isReloadNavigation && typeof window !== 'undefined';
+
+    if (shouldRestoreViewport) {
+      const shouldRestoreOnce =
+        window.sessionStorage.getItem(HOME_SESSION_KEYS.restoreViewportOnce) === '1';
+      if (shouldRestoreOnce) {
+        const rawViewport = window.sessionStorage.getItem(HOME_SESSION_KEYS.savedViewport);
+        if (rawViewport) {
+          try {
+            const parsed = JSON.parse(rawViewport) as RouteViewport;
+            if (isValidRouteViewport(parsed)) {
+              setVisibleRouteViewport(parsed);
+              setFrozenVisibleRouteViewport(parsed);
+              setRestoredInitialViewport(parsed);
+            }
+          } catch {
+            // 손상된 저장값은 무시하고 현재 위치 초기화를 따른다.
+          }
+        }
+      }
+      window.sessionStorage.removeItem(HOME_SESSION_KEYS.restoreViewportOnce);
     }
     hasRestoredFromQueryRef.current = true;
   }, [searchParams]);
@@ -204,12 +215,6 @@ export function Home() {
     if (isSheetExpanded) {
       params.set(HOME_QUERY_KEYS.sheet, 'expanded');
     }
-    const hasExplicitUiState =
-      Boolean(selectedCourseId) || selectedCategories.size > 0 || isSheetExpanded;
-    if (effectiveQueryViewport && hasExplicitUiState) {
-      serializeViewportToSearchParams(params, effectiveQueryViewport);
-    }
-
     const nextQuery = params.toString();
     const currentQuery = searchParams.toString();
     if (nextQuery === currentQuery) {
@@ -221,7 +226,6 @@ export function Home() {
     const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
     router.replace(nextUrl, { scroll: false });
   }, [
-    effectiveQueryViewport,
     isSheetExpanded,
     pathname,
     router,
@@ -383,6 +387,53 @@ export function Home() {
     }
   }, []);
 
+  const snapshotHomeQueryBeforeDetail = useCallback(
+    (courseId: string) => {
+      if (typeof window === 'undefined') return;
+
+      const params = new URLSearchParams();
+      params.set(HOME_QUERY_KEYS.selectedCourseId, courseId);
+
+      if (selectedCategories.size > 0) {
+        const encodedCategories = TAB_ITEMS.map((item) => item.category).filter((category) =>
+          selectedCategories.has(category),
+        );
+        params.set(HOME_QUERY_KEYS.categories, encodedCategories.join(','));
+      }
+
+      if (isSheetExpanded) {
+        params.set(HOME_QUERY_KEYS.sheet, 'expanded');
+      }
+
+      const viewportForSnapshot =
+        effectiveQueryViewport ?? visibleRouteViewport ?? frozenVisibleRouteViewport;
+      if (isValidRouteViewport(viewportForSnapshot)) {
+        window.sessionStorage.setItem(
+          HOME_SESSION_KEYS.savedViewport,
+          JSON.stringify(viewportForSnapshot),
+        );
+        window.sessionStorage.setItem(HOME_SESSION_KEYS.restoreViewportOnce, '1');
+      } else {
+        // null 타이밍에 기존 저장값까지 지워지면 뒤로가기 복원이 깨지므로 유지한다.
+        const hasSavedViewport = Boolean(window.sessionStorage.getItem(HOME_SESSION_KEYS.savedViewport));
+        if (hasSavedViewport) {
+          window.sessionStorage.setItem(HOME_SESSION_KEYS.restoreViewportOnce, '1');
+        } else {
+          window.sessionStorage.removeItem(HOME_SESSION_KEYS.restoreViewportOnce);
+        }
+      }
+
+      const nextQuery = params.toString();
+      const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+      const currentUrl = `${window.location.pathname}${window.location.search}`;
+      if (currentUrl === nextUrl) return;
+
+      window.history.replaceState(window.history.state, '', nextUrl);
+      lastSyncedQueryRef.current = nextQuery;
+    },
+    [effectiveQueryViewport, frozenVisibleRouteViewport, isSheetExpanded, pathname, selectedCategories, visibleRouteViewport],
+  );
+
   return (
     <section className={styles.container}>
       {/* [UI] 상단 헤더 영역 */}
@@ -448,6 +499,7 @@ export function Home() {
           openPeekFromCollapsedSignal={openPeekFromCollapsedSignal}
           onCourseSelect={(courseId) => {
             setSelectedCourseId(courseId);
+            snapshotHomeQueryBeforeDetail(courseId);
             router.push(ROUTES.COURSES.DETAIL(courseId));
           }}
           onCourseLikeToggle={toggleCourseLike}
