@@ -8,6 +8,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Route } from '@/commons/types/runroute';
 import type { TmapV3 } from '@/commons/types/tmap';
+import { bindMapEvents } from '@/components/tmap/map-core/events';
+import { getTmapv3Runtime } from '@/components/tmap/map-core/runtime';
 import { getWaypointMarkerIconUrl } from '@/components/tmap/utils/build-waypoint-marker-icon';
 import { getPedestrianRoute } from '@/repositories/map.repository';
 
@@ -82,15 +84,7 @@ function registerZoomClampListeners(map: CourseDetailMapInstance): () => void {
     clampZoomLevel(map);
   };
 
-  ZOOM_CLAMP_EVENT_NAMES.forEach((eventName) => {
-    if (typeof map.on === 'function') {
-      map.on(eventName, callback);
-      return;
-    }
-    if (typeof map.addListener === 'function') {
-      map.addListener(eventName, callback);
-    }
-  });
+  bindMapEvents(map, [...ZOOM_CLAMP_EVENT_NAMES], callback);
 
   return () => {
     ZOOM_CLAMP_EVENT_NAMES.forEach((eventName) => {
@@ -187,7 +181,7 @@ export function TmapCourseDetail({ course, mapLabel }: TmapCourseDetailProps) {
     const tryMountMap = () => {
       if (cancelled) return;
       const rootElement = document.getElementById(mapContainerId);
-      const Tmapv3 = window.Tmapv3 as TmapV3Runtime | undefined;
+      const Tmapv3 = getTmapv3Runtime() as TmapV3Runtime | undefined;
       if (!rootElement || !Tmapv3) {
         pollTimer = window.setTimeout(tryMountMap, 120);
         return;
@@ -253,7 +247,7 @@ export function TmapCourseDetail({ course, mapLabel }: TmapCourseDetailProps) {
   useEffect(() => {
     if (!mapReady) return;
 
-    const Tmapv3 = window.Tmapv3 as TmapV3Runtime | undefined;
+    const Tmapv3 = getTmapv3Runtime() as TmapV3Runtime | undefined;
     const mapInstance = mapRef.current;
     if (!Tmapv3 || !mapInstance) return;
 

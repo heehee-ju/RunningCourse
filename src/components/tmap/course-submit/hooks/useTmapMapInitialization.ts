@@ -1,6 +1,8 @@
 import { useCallback, useRef } from 'react';
 
 import type { TmapCoordinate, TmapLatLngLike, TmapMapLike, TmapV3 } from '@/commons/types/tmap';
+import { bindMapEvents } from '@/components/tmap/map-core/events';
+import { getTmapv3Runtime } from '@/components/tmap/map-core/runtime';
 
 import { extractLatLngFromVectorEvent, MAX_POINT_LENGTH, toCoordinate } from './courseMap.utils';
 
@@ -26,7 +28,7 @@ export function useTmapMapInitialization({
   const initializeMap = useCallback(
     (mapElementId: string, center: TmapCoordinate) => {
       if (isMapInitializedRef.current) return;
-      const Tmapv3 = window.Tmapv3 as TmapV3 | undefined;
+      const Tmapv3 = getTmapv3Runtime() as TmapV3 | undefined;
       const mapElement = document.getElementById(mapElementId);
       if (!Tmapv3 || !mapElement) return;
 
@@ -91,16 +93,8 @@ export function useTmapMapInitialization({
           };
         };
 
-        if (typeof mapLike.on === 'function') {
-          mapLike.on('click', clickListenerUnknown);
-          mapLike.on('Click', clickListenerUnknown);
-          isClickListenerBoundRef.current = true;
-          return;
-        }
-
-        if (typeof mapLike.addListener === 'function') {
-          mapLike.addListener('click', clickListenerUnknown);
-          mapLike.addListener('Click', clickListenerUnknown);
+        if (typeof mapLike.on === 'function' || typeof mapLike.addListener === 'function') {
+          bindMapEvents(mapLike, ['click', 'Click'], clickListenerUnknown as () => void);
           isClickListenerBoundRef.current = true;
           return;
         }
@@ -114,10 +108,14 @@ export function useTmapMapInitialization({
 
       const mapLikeWithLoad = map as TmapMapLike & {
         on?: (eventName: string, callback: () => void) => void;
+        addListener?: (eventName: string, callback: () => void) => void;
       };
 
-      if (typeof mapLikeWithLoad.on === 'function') {
-        mapLikeWithLoad.on('load', bindClickListener);
+      if (
+        typeof mapLikeWithLoad.on === 'function' ||
+        typeof mapLikeWithLoad.addListener === 'function'
+      ) {
+        bindMapEvents(mapLikeWithLoad, ['load'], bindClickListener);
       }
 
       bindClickListener();

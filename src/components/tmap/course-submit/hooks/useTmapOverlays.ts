@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react';
 
 import type { TmapCoordinate, TmapMapLike, TmapMarkerLike, TmapV3 } from '@/commons/types/tmap';
+import { getTmapv3Runtime } from '@/components/tmap/map-core/runtime';
 import { getWaypointMarkerIconUrl } from '@/components/tmap/utils/build-waypoint-marker-icon';
 
 import type { RefObject } from 'react';
@@ -18,7 +19,7 @@ export function useTmapOverlays(mapRef: RefObject<TmapMapLike | null>) {
 
   const drawPointMarkers = useCallback(
     (nextPoints: TmapCoordinate[]) => {
-      const Tmapv3 = window.Tmapv3 as TmapV3 | undefined;
+      const Tmapv3 = getTmapv3Runtime() as TmapV3 | undefined;
       const map = mapRef.current;
       if (!Tmapv3 || !map) return;
 
@@ -48,7 +49,7 @@ export function useTmapOverlays(mapRef: RefObject<TmapMapLike | null>) {
 
   const drawRoutePolyline = useCallback(
     (path: TmapCoordinate[]) => {
-      const Tmapv3 = window.Tmapv3 as TmapV3 | undefined;
+      const Tmapv3 = getTmapv3Runtime() as TmapV3 | undefined;
       const map = mapRef.current;
       if (!Tmapv3 || !map) return;
 

@@ -5,6 +5,7 @@ import { useEffect, useId, useRef } from 'react';
 import { Button } from '@/commons/components/button';
 import { Icon } from '@/commons/components/icons';
 import { SEOUL_CITY_HALL_COORDINATE } from '@/commons/utils/geo';
+import { getTmapv3Runtime } from '@/components/tmap/map-core/runtime';
 
 import { useCourseMap, type SaveRoutePayload } from './hooks/useCourseMap';
 import styles from './styles.module.css';
@@ -40,7 +41,7 @@ export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) 
     const initialize = () => {
       if (cancelled) return;
       const mapElementId = mapContainerIdRef.current;
-      if (!window.Tmapv3 || !document.getElementById(mapElementId)) {
+      if (!getTmapv3Runtime() || !document.getElementById(mapElementId)) {
         window.setTimeout(initialize, 120);
         return;
       }
