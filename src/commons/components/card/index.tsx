@@ -13,10 +13,12 @@ type CardBaseProps = {
   location?: string;
   distanceText?: string;
   likeCount?: number;
+  readonlyLike?: boolean;
   onLikeClick?: () => void;
   onPrimaryActionClick?: () => void;
   primaryActionLabel?: string;
   onSecondaryActionClick?: () => void;
+  secondaryActionLabel?: string;
   secondaryActionDisabled?: boolean;
 };
 
@@ -41,15 +43,19 @@ export function Card({
   location = '여의도 한강공원',
   distanceText = '5km',
   likeCount = 234,
+  readonlyLike = false,
   onLikeClick,
   onPrimaryActionClick,
   primaryActionLabel,
   onSecondaryActionClick,
+  secondaryActionLabel,
   secondaryActionDisabled = false,
 }: CardProps) {
   const showActions = type === 'my-course' || type === 'liked-course';
   const resolvedPrimaryActionLabel =
     primaryActionLabel ?? (type === 'my-course' ? '수정' : '상세보기');
+  const resolvedSecondaryActionLabel =
+    secondaryActionLabel ?? (type === 'my-course' ? '삭제' : '좋아요 취소');
 
   const rootClass = [
     styles.root,
@@ -83,7 +89,7 @@ export function Card({
           <div className={styles.contentInfo}>
             <div className={styles.contentTop}>
               <h3 className={styles.title}>{title}</h3>
-              {onLikeClick ? (
+              {onLikeClick && !readonlyLike ? (
                 <button
                   type="button"
                   className={`${styles.likeWrap} ${styles.likeButton}`}
@@ -158,7 +164,7 @@ export function Card({
             onClick={onSecondaryActionClick}
             disabled={secondaryActionDisabled}
           >
-            {type === 'my-course' ? '삭제' : '좋아요 취소'}
+            {resolvedSecondaryActionLabel}
           </Button>
         </section>
       ) : null}

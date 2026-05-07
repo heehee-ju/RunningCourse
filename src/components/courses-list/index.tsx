@@ -22,7 +22,6 @@ type CoursesListProps = {
   openPeekFromCollapsedSignal?: number;
   onSheetPositionChange?: (payload: SheetPositionPayload) => void;
   onCourseSelect?: (courseId: string) => void;
-  onCourseLikeToggle?: (courseId: string) => void;
 };
 
 export function CoursesList({
@@ -33,7 +32,6 @@ export function CoursesList({
   openPeekFromCollapsedSignal,
   onSheetPositionChange,
   onCourseSelect,
-  onCourseLikeToggle,
 }: CoursesListProps) {
   const {
     sheetRef,
@@ -117,7 +115,7 @@ export function CoursesList({
               location={card.location}
               distanceText={card.distanceText}
               likeCount={getCourseLikeCount?.(card.courseId) ?? card.likeCount}
-              onLikeClick={() => onCourseLikeToggle?.(card.courseId)}
+              readonlyLike={true}
             />
           </div>
         ))}

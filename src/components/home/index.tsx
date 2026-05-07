@@ -6,11 +6,11 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { Icon } from '@/commons/components/icons';
 import { TabButton } from '@/commons/components/tab';
 import { ROUTES } from '@/commons/constants/url';
+import { useCourseLikes } from '@/commons/hooks/useCourseLikes';
 import { Header } from '@/commons/layout/header';
 import type { RouteViewport } from '@/commons/types/runroute';
 import { CoursesList } from '@/components/courses-list';
 import { TmapHome } from '@/components/tmap/home';
-import { useCourseLikes } from '@/hooks/useCourseLikes';
 
 import { useRoutes } from './hooks/index.use-routes';
 import { useHomeFrozenViewportSync } from './hooks/use-home-frozen-viewport';
@@ -121,7 +121,7 @@ export function Home() {
       }, {}),
     [allRoutes],
   );
-  const { isCourseLiked, getCourseLikeCount, toggleCourseLike } = useCourseLikes(courseLikeCounts);
+  const { isCourseLiked, getCourseLikeCount } = useCourseLikes(courseLikeCounts);
 
   const toggleCategory = (category: DistanceCategory) => {
     setSelectedCategories((previous) => {
@@ -208,7 +208,6 @@ export function Home() {
             snapshotHomeQueryBeforeDetail(courseId);
             router.push(ROUTES.COURSES.DETAIL(courseId));
           }}
-          onCourseLikeToggle={toggleCourseLike}
           onSheetPositionChange={({ state, visibleHeight }) => {
             setIsSheetExpanded(state === 'expanded');
             setSheetVisibleHeight(visibleHeight);
