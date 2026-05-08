@@ -28,6 +28,7 @@ import {
 
 export function Home() {
   const [sheetVisibleHeight, setSheetVisibleHeight] = useState(260);
+  const [sheetVisualVisibleHeight, setSheetVisualVisibleHeight] = useState(260);
   const sheetVisibleHeightRef = useRef(sheetVisibleHeight);
   sheetVisibleHeightRef.current = sheetVisibleHeight;
   const [openPeekFromCollapsedSignal, setOpenPeekFromCollapsedSignal] = useState(0);
@@ -174,6 +175,7 @@ export function Home() {
         <div className={styles.map}>
           <TmapHome
             bottomSheetVisibleHeight={sheetVisibleHeight}
+            bottomSheetVisualVisibleHeight={sheetVisualVisibleHeight}
             isBottomSheetExpanded={isSheetExpanded}
             routes={filteredRoutes}
             initialViewport={restoredInitialViewport}
@@ -200,6 +202,7 @@ export function Home() {
         <CoursesList
           cards={courseCards}
           isLoading={isLoading}
+          isRouteQueryViewportReady={effectiveQueryViewport !== null}
           isCourseLiked={isCourseLiked}
           getCourseLikeCount={getCourseLikeCount}
           openPeekFromCollapsedSignal={openPeekFromCollapsedSignal}
@@ -208,9 +211,10 @@ export function Home() {
             snapshotHomeQueryBeforeDetail(courseId);
             router.push(ROUTES.COURSES.DETAIL(courseId));
           }}
-          onSheetPositionChange={({ state, visibleHeight }) => {
+          onSheetPositionChange={({ state, visibleHeight, visualVisibleHeight }) => {
             setIsSheetExpanded(state === 'expanded');
             setSheetVisibleHeight(visibleHeight);
+            setSheetVisualVisibleHeight(visualVisibleHeight);
           }}
         />
       </div>
