@@ -146,7 +146,7 @@ export function Home() {
   return (
     <section className={styles.container}>
       <div className={styles.topChrome}>
-        <Header showLogo showLeftIcon={false} showRightIcon={false} title="RouteRun" />
+        <Header showLogo showLeftIcon={false} showRightIcon={false} title="루트런" />
       </div>
       <div className={styles.tab}>
         <div className={styles.tabScroll}>
