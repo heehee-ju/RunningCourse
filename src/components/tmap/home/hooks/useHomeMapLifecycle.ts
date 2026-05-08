@@ -3,12 +3,12 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { RefObject } from 'react';
 
 import type { Route, RouteViewport } from '@/commons/types/runroute';
 import { SEOUL_CITY_HALL_COORDINATE } from '@/commons/utils/geo';
 
 import type { RouteMarkerEntry, TmapMap, TmapMarker, TmapMarkerCluster, TmapV3API } from '../types';
+import type { MutableRefObject } from 'react';
 
 const DEFAULT_GEOLOCATION_OPTIONS: PositionOptions = {
   enableHighAccuracy: false,
@@ -23,32 +23,32 @@ const PRECISE_GEOLOCATION_OPTIONS: PositionOptions = {
 };
 
 const INITIAL_MAP_ZOOM_LEVEL = 14;
+const SDK_READY_RETRY_DELAY_MS = 120;
 
 type UseHomeMapLifecycleParams = {
   mapContainerId: string;
   initialViewport: RouteViewport | null;
-  routesRef: RefObject<Route[]>;
-  mapRef: RefObject<TmapMap | null>;
-  currentLocationMarkerRef: RefObject<TmapMarker | null>;
-  currentLocationCoordinateRef: RefObject<{ lat: number; lng: number } | null>;
-  routeMarkerMapRef: RefObject<Map<string, RouteMarkerEntry>>;
-  routeMarkerClusterRef: RefObject<TmapMarkerCluster | null>;
-  mapListenersRegisteredRef: RefObject<boolean>;
-  isMapInteractingRef: RefObject<boolean>;
-  interactionWatchdogTimerRef: RefObject<number | null>;
-  viewportSyncIntervalRef: RefObject<number | null>;
-  zoomUpdateRafRef: RefObject<number | null>;
-  markerVisibilityTimerRef: RefObject<number | null>;
-  selectedRouteIdRef: RefObject<string | null>;
-  markerHoverCountRef: RefObject<number>;
-  lastAppliedZoomRef: RefObject<number | null>;
+  routesRef: MutableRefObject<Route[]>;
+  mapRef: MutableRefObject<TmapMap | null>;
+  currentLocationMarkerRef: MutableRefObject<TmapMarker | null>;
+  currentLocationCoordinateRef: MutableRefObject<{ lat: number; lng: number } | null>;
+  routeMarkerMapRef: MutableRefObject<Map<string, RouteMarkerEntry>>;
+  routeMarkerClusterRef: MutableRefObject<TmapMarkerCluster | null>;
+  mapListenersRegisteredRef: MutableRefObject<boolean>;
+  isMapInteractingRef: MutableRefObject<boolean>;
+  interactionWatchdogTimerRef: MutableRefObject<number | null>;
+  viewportSyncIntervalRef: MutableRefObject<number | null>;
+  zoomUpdateRafRef: MutableRefObject<number | null>;
+  markerVisibilityTimerRef: MutableRefObject<number | null>;
+  selectedRouteIdRef: MutableRefObject<string | null>;
+  markerHoverCountRef: MutableRefObject<number>;
+  lastAppliedZoomRef: MutableRefObject<number | null>;
   clearSelectedRoutePolyline: () => void;
   clearViewportReporterState: () => void;
   clearZoomControlState: () => void;
   getTmapv3: () => TmapV3API | undefined;
   minZoomLevel: number;
   maxZoomLevel: number;
-  clampHomeMapZoom: (map: TmapMap) => void;
   createCustomMarker: (map: TmapMap, lat: number, lng: number) => void;
   centerMapToLocationInVisibleArea: (map: TmapMap, lat: number, lng: number) => void;
   applyInitialViewport: (map: TmapMap) => void;
@@ -84,7 +84,6 @@ export function useHomeMapLifecycle({
   getTmapv3,
   minZoomLevel,
   maxZoomLevel,
-  clampHomeMapZoom,
   createCustomMarker,
   centerMapToLocationInVisibleArea,
   applyInitialViewport,
@@ -119,21 +118,45 @@ export function useHomeMapLifecycle({
 
   useEffect(() => {
     let cancelled = false;
+    let sdkRetryTimerId: number | null = null;
+    let sdkRetryCount = 0;
+
+    function scheduleSdkRetry() {
+      if (cancelled) return;
+      if (sdkRetryTimerId !== null) {
+        window.clearTimeout(sdkRetryTimerId);
+      }
+      sdkRetryTimerId = window.setTimeout(checkLibrary, SDK_READY_RETRY_DELAY_MS);
+    }
+
+    const isTmapRuntimeReady = (runtime: TmapV3API | undefined): runtime is TmapV3API => {
+      if (!runtime) return false;
+      return typeof runtime.Map === 'function' && typeof runtime.LatLng === 'function';
+    };
 
     const initTmap = (lat: number, lng: number) => {
       if (cancelled) return;
       const Tmapv3 = getTmapv3();
-      if (!Tmapv3 || mapRef.current) return;
+      if (!isTmapRuntimeReady(Tmapv3) || mapRef.current) return;
 
-      const map = new Tmapv3.Map(mapContainerId, {
-        center: new Tmapv3.LatLng(lat, lng),
-        width: '100%',
-        height: '100%',
-        zoom: INITIAL_MAP_ZOOM_LEVEL,
-        minZoom: minZoomLevel,
-        zoomControl: false,
-        scrollwheel: false,
-      });
+      let map: TmapMap;
+      try {
+        map = new Tmapv3.Map(mapContainerId, {
+          center: new Tmapv3.LatLng(lat, lng),
+          width: '100%',
+          height: '100%',
+          zoom: INITIAL_MAP_ZOOM_LEVEL,
+          minZoom: minZoomLevel,
+          zoomControl: false,
+          scrollwheel: false,
+        });
+      } catch (error) {
+        // SDK 전역이 먼저 생기고 생성자가 늦게 준비되는 레이스를 흡수한다.
+        // eslint-disable-next-line no-console
+        console.error('[TmapHome] SDK 초기화 실패, 재시도 예정:', error);
+        scheduleSdkRetry();
+        return;
+      }
 
       map.setZoomLimit?.(minZoomLevel, maxZoomLevel);
       lastAppliedZoomRef.current = map.getZoom();
@@ -184,19 +207,29 @@ export function useHomeMapLifecycle({
       }
     };
 
-    const checkLibrary = () => {
-      if (getTmapv3()) {
+    function checkLibrary() {
+      if (isTmapRuntimeReady(getTmapv3())) {
+        sdkRetryCount = 0;
         startWithLocation();
       } else {
-        window.setTimeout(checkLibrary, 100);
+        sdkRetryCount += 1;
+        if (sdkRetryCount % 25 === 0) {
+          // eslint-disable-next-line no-console
+          console.warn('[TmapHome] Tmap SDK 로딩 대기 중...');
+        }
+        scheduleSdkRetry();
       }
-    };
+    }
 
     checkLibrary();
 
     const routeMarkerMap = routeMarkerMapRef.current;
     return () => {
       cancelled = true;
+      if (sdkRetryTimerId !== null) {
+        window.clearTimeout(sdkRetryTimerId);
+        sdkRetryTimerId = null;
+      }
 
       const clusterOnUnmount = routeMarkerClusterRef.current;
       if (clusterOnUnmount && typeof clusterOnUnmount.clearMarkers === 'function') {

@@ -8,19 +8,14 @@ import { bindMapEvents } from '@/components/tmap/map-core/events';
 import { getTmapv3Runtime } from '@/components/tmap/map-core/runtime';
 import { applyPointerCursorToTmapMarker } from '@/components/tmap/utils/apply-pointer-cursor-to-tmap-marker';
 
-import { useMapZoomControls } from './hooks/useMapZoomControls';
 import { useHomeMapLifecycle } from './hooks/useHomeMapLifecycle';
-import { useSelectedRoutePolyline } from './hooks/useSelectedRoutePolyline';
+import { useMapZoomControls } from './hooks/useMapZoomControls';
 import { useRouteMarkers } from './hooks/useRouteMarkers';
+import { useSelectedRoutePolyline } from './hooks/useSelectedRoutePolyline';
 import { useViewportReporter } from './hooks/useViewportReporter';
 import styles from './styles.module.css';
-import type {
-  RouteMarkerEntry,
-  TmapLatLng,
-  TmapMap,
-  TmapMarker,
-  TmapMarkerCluster,
-} from './types';
+
+import type { RouteMarkerEntry, TmapLatLng, TmapMap, TmapMarker, TmapMarkerCluster } from './types';
 
 /** 줌 시 마커 위경도 디버그 로그. 끄기: `localStorage.DEBUG_TMAP_MARKERS=0` · 항상 켜기: `=1` */
 function isMarkerCoordDebugEnabled(): boolean {
@@ -212,54 +207,6 @@ export function TmapHome({
     [readCoordinateValue],
   );
 
-  const logMarkerCoordinateAudit = useCallback(
-    (map: TmapMap, phase: string) => {
-      if (!isMarkerCoordDebugEnabled()) return;
-      const zoom = typeof map.getZoom === 'function' ? map.getZoom() : Number.NaN;
-      const selectedId = selectedRouteIdRef.current;
-      const rows: Array<Record<string, string | number | boolean | null>> = [];
-      let mismatch = 0;
-      let noSdkReader = 0;
-
-      routeMarkerMapRef.current.forEach((entry, routeId) => {
-        const sdk = tryReadSdkLatLngFromMarker(entry.marker);
-        if (!sdk) noSdkReader += 1;
-        const dLat = sdk ? sdk.lat - entry.lat : null;
-        const dLng = sdk ? sdk.lng - entry.lng : null;
-        const coordsOk =
-          sdk !== null &&
-          dLat !== null &&
-          dLng !== null &&
-          Math.abs(dLat) < 1e-9 &&
-          Math.abs(dLng) < 1e-9;
-        if (!coordsOk) mismatch += 1;
-        rows.push({
-          routeId: `${routeId.slice(0, 10)}…`,
-          sel: routeId === selectedId,
-          visible: entry.isVisible,
-          storedLat: roundCoordForLog(entry.lat),
-          storedLng: roundCoordForLog(entry.lng),
-          sdkLat: sdk ? roundCoordForLog(sdk.lat) : null,
-          sdkLng: sdk ? roundCoordForLog(sdk.lng) : null,
-          dLat: dLat !== null ? roundCoordForLog(dLat) : null,
-          dLng: dLng !== null ? roundCoordForLog(dLng) : null,
-        });
-      });
-
-      /* eslint-disable no-console -- DEBUG_TMAP_MARKERS / 개발 모드 마커 좌표 불변 검사 */
-      console.groupCollapsed(
-        `[TmapHome] marker-debug · ${phase} · zoom=${String(zoom)} · mismatch=${mismatch}/${rows.length} · noGetPosition=${noSdkReader}`,
-      );
-      console.table(rows);
-      console.log(
-        '해석: stored* = 앱이 route에 넣은 값, sdk* = Marker.getPosition() (없으면 null). d가 0이면 위경도 숫자는 안 바뀐 것. 여전히 화면에서 밀리면 앵커/투영/CSS 이슈.',
-      );
-      console.groupEnd();
-      /* eslint-enable no-console */
-    },
-    [tryReadSdkLatLngFromMarker],
-  );
-
   const {
     emitViewportReports,
     emitVisibleViewportReportOnly,
@@ -324,7 +271,7 @@ export function TmapHome({
   );
 
   // [마커] 현재 위치 마커 생성 및 좌표 갱신
-  const createCustomMarker = (map: TmapMap, lat: number, lng: number) => {
+  const createCustomMarker = useCallback((map: TmapMap, lat: number, lng: number) => {
     const Tmapv3 = getTmapv3Runtime();
     if (!Tmapv3) return;
     currentLocationCoordinateRef.current = { lat, lng };
@@ -349,7 +296,45 @@ export function TmapHome({
     const locationMarker = new Tmapv3.Marker(markerOptions);
     applyPointerCursorToTmapMarker(locationMarker);
     currentLocationMarkerRef.current = locationMarker;
-  };
+  }, []);
+
+  const { syncSelectedRoutePolyline, clearSelectedRoutePolyline } = useSelectedRoutePolyline({
+    mapContainerId: 'map_div',
+    routesRef,
+    selectedRouteIdRef,
+    mapRef: mapInstance,
+    bottomSheetVisibleHeightRef,
+    getTmapv3: getTmapv3Runtime,
+    clampHomeMapZoom,
+    readCoordinateValue,
+  });
+
+  const {
+    syncRouteMarkersDisplayForZoom: syncRouteMarkersDisplayForZoomByHook,
+    scheduleMarkerVisibilitySync: scheduleMarkerVisibilitySyncByHook,
+    syncSelectedMarkerVisual: syncSelectedMarkerVisualByHook,
+    syncRouteMarkers: syncRouteMarkersByHook,
+  } = useRouteMarkers({
+    mapRef: mapInstance,
+    routesRef,
+    routeMarkerMapRef,
+    routeMarkerClusterRef,
+    routeMarkerClusterGenerationRef,
+    routesSyncSigRef,
+    selectedRouteIdRef,
+    markerVisibilityTimerRef,
+    getTmapv3: getTmapv3Runtime,
+    tryReadMarkerAttachedMap,
+    tryReadSdkLatLngFromMarker,
+    roundCoordForLog,
+    isMarkerCoordDebugEnabled,
+    isMarkerLifecycleDebugEnabled,
+    bottomSheetVisibleHeightRef,
+    onCourseMarkerClick,
+    setMarkerHoverCursor,
+    syncSelectedRoutePolyline,
+    clearSelectedRoutePolyline,
+  });
 
   const registerMapListeners = useCallback(
     (map: TmapMap) => {
@@ -449,6 +434,7 @@ export function TmapHome({
         boundEndInteractionEvents;
     },
     [
+      createCustomMarker,
       enforceMinZoomLevel,
       isMapInteractingRef,
       notifyZoomLimitState,
@@ -459,45 +445,29 @@ export function TmapHome({
     ],
   );
 
-  const { syncSelectedRoutePolyline, clearSelectedRoutePolyline } = useSelectedRoutePolyline({
-    mapContainerId: 'map_div',
-    routesRef,
-    selectedRouteIdRef,
-    mapRef: mapInstance,
-    bottomSheetVisibleHeightRef,
-    getTmapv3: getTmapv3Runtime,
-    clampHomeMapZoom,
-    readCoordinateValue,
-  });
+  const applyInitialViewport = useCallback(
+    (map: TmapMap) => {
+      const viewport = initialViewport;
+      const Tmapv3 = getTmapv3Runtime();
+      if (!viewport || !Tmapv3) return;
+      if (typeof map.fitBounds !== 'function') return;
 
-  const {
-    syncRouteMarkersDisplayForZoom: syncRouteMarkersDisplayForZoomByHook,
-    scheduleMarkerVisibilitySync: scheduleMarkerVisibilitySyncByHook,
-    syncSelectedMarkerVisual: syncSelectedMarkerVisualByHook,
-    syncRouteMarkers: syncRouteMarkersByHook,
-  } = useRouteMarkers({
-    mapRef: mapInstance,
-    routesRef,
-    routeMarkerMapRef,
-    routeMarkerClusterRef,
-    routeMarkerClusterGenerationRef,
-    routesSyncSigRef,
-    selectedRouteIdRef,
-    selectedRouteDataReadyRef,
-    markerVisibilityTimerRef,
-    getTmapv3: getTmapv3Runtime,
-    readCoordinateValue,
-    tryReadMarkerAttachedMap,
-    tryReadSdkLatLngFromMarker,
-    roundCoordForLog,
-    isMarkerCoordDebugEnabled,
-    isMarkerLifecycleDebugEnabled,
-    bottomSheetVisibleHeightRef,
-    onCourseMarkerClick,
-    setMarkerHoverCursor,
-    syncSelectedRoutePolyline,
-    clearSelectedRoutePolyline,
-  });
+      const southWest = new Tmapv3.LatLng(viewport.southWestLat, viewport.southWestLng);
+      const northEast = new Tmapv3.LatLng(viewport.northEastLat, viewport.northEastLng);
+      const LatLngBounds = (
+        Tmapv3 as unknown as { LatLngBounds?: new (sw: unknown, ne: unknown) => unknown }
+      ).LatLngBounds;
+
+      if (typeof LatLngBounds === 'function') {
+        const bounds = new LatLngBounds(southWest, northEast);
+        map.fitBounds(bounds, 0);
+      } else {
+        map.fitBounds(southWest, northEast);
+      }
+      clampHomeMapZoom(map);
+    },
+    [initialViewport],
+  );
 
   const { mapReadyToken, handleRefreshLocation } = useHomeMapLifecycle({
     mapContainerId: 'map_div',
@@ -523,29 +493,9 @@ export function TmapHome({
     getTmapv3: getTmapv3Runtime,
     minZoomLevel: MIN_ZOOM_LEVEL,
     maxZoomLevel: MAX_ZOOM_LEVEL,
-    clampHomeMapZoom,
     createCustomMarker,
     centerMapToLocationInVisibleArea,
-    applyInitialViewport: (map) => {
-      const viewport = initialViewport;
-      const Tmapv3 = getTmapv3Runtime();
-      if (!viewport || !Tmapv3) return;
-      if (typeof map.fitBounds !== 'function') return;
-
-      const southWest = new Tmapv3.LatLng(viewport.southWestLat, viewport.southWestLng);
-      const northEast = new Tmapv3.LatLng(viewport.northEastLat, viewport.northEastLng);
-      const LatLngBounds = (
-        Tmapv3 as unknown as { LatLngBounds?: new (sw: unknown, ne: unknown) => unknown }
-      ).LatLngBounds;
-
-      if (typeof LatLngBounds === 'function') {
-        const bounds = new LatLngBounds(southWest, northEast);
-        map.fitBounds(bounds, 0);
-      } else {
-        map.fitBounds(southWest, northEast);
-      }
-      clampHomeMapZoom(map);
-    },
+    applyInitialViewport,
     enforceMinZoomLevel,
     registerMapListeners,
     scheduleViewportReport,
