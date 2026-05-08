@@ -159,8 +159,7 @@ export function TmapHome({
   const markerHoverCountRef = useRef(0);
   const bottomSheetVisibleHeightRef = useRef(bottomSheetVisibleHeight);
   bottomSheetVisibleHeightRef.current = bottomSheetVisibleHeight;
-  const sheetChromeBottomHeight =
-    bottomSheetVisualVisibleHeight ?? bottomSheetVisibleHeight;
+  const sheetChromeBottomHeight = bottomSheetVisualVisibleHeight ?? bottomSheetVisibleHeight;
   const lastMapContainerSizeRef = useRef<{ width: number; height: number }>({
     width: 0,
     height: 0,
@@ -679,8 +678,7 @@ export function TmapHome({
   const sheetControlPositionClassName =
     sheetChromeBottomHeight <= 24 ? styles.sheetControlsCollapsed : styles.sheetControlsPeek;
   const shouldHideFloatingControls =
-    isBottomSheetExpanded ||
-    (isMobileOrTabletViewport && sheetChromeBottomHeight >= 320);
+    isBottomSheetExpanded || (isMobileOrTabletViewport && sheetChromeBottomHeight >= 320);
 
   return (
     <div ref={rootRef} className={styles.root}>
