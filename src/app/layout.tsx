@@ -11,6 +11,11 @@ import './globals.css';
 export const metadata: Metadata = {
   title: '루트런 | 내 주변 러닝 코스',
   description: '전국의 러닝 코스를 찾고, 나만의 경로를 기록하여 러너들과 공유해보세요.',
+  icons: {
+    icon: [{ url: '/icons/rr-logo-favicon.png', type: 'image/png', sizes: '64x64' }],
+    shortcut: [{ url: '/icons/rr-logo-favicon.png', type: 'image/png' }],
+    apple: '/icons/rr-logo.png',
+  },
 };
 
 export default async function RootLayout({
@@ -51,6 +56,9 @@ export default async function RootLayout({
   return (
     <html lang="ko">
       <head>
+        <link rel="icon" href="/icons/rr-logo-favicon.png" type="image/png" sizes="64x64" />
+        <link rel="shortcut icon" href="/icons/rr-logo-favicon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/icons/rr-logo.png" />
         {/* TMap SDK가 내부적으로 document.write를 사용해 동기 로드가 필요하다. */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script

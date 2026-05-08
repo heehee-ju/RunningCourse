@@ -52,7 +52,7 @@ export function Header({
     <header className={rootClass}>
       <div className={styles.inner}>
         {showLogo ? (
-          <LogoIcon size={32} className={styles.logo} />
+          <LogoIcon width={44} height={32} className={styles.logo} />
         ) : showLeftIcon ? (
           <button
             type="button"

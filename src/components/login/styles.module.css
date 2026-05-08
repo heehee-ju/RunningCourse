@@ -37,41 +37,14 @@
 
 .logoSection {
   display: flex;
-  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 12px;
 }
 
-.logoIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  min-width: 48px;
-  background-color: var(--color-black-500);
-  border-radius: 16px;
-  flex-shrink: 0;
-}
-
-.logoIconText {
-  font-family: var(--typography-heading-3-ko-desktop-semibold-font-family);
-  font-size: var(--typography-heading-3-ko-desktop-semibold-font-size);
-  font-weight: var(--typography-heading-3-ko-desktop-semibold-font-weight);
-  line-height: var(--typography-heading-3-ko-desktop-semibold-line-height);
-  letter-spacing: var(--typography-heading-3-ko-desktop-semibold-letter-spacing);
-  color: var(--color-white-500);
-}
-
-.logoText {
-  font-family: var(--typography-heading-1-ko-desktop-font-family);
-  font-size: var(--typography-heading-1-ko-desktop-font-size);
-  font-weight: var(--typography-heading-1-ko-desktop-font-weight);
-  line-height: var(--typography-heading-1-ko-desktop-line-height);
-  letter-spacing: var(--typography-heading-1-ko-desktop-letter-spacing);
-  color: var(--color-black-500);
-  white-space: nowrap;
+.logoImage {
+  width: 220px;
+  height: auto;
+  display: block;
 }
 
 /* ===== buttons section ===== */

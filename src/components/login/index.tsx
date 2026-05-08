@@ -15,6 +15,7 @@
 'use client';
 
 import { Button } from '@/commons/components/button';
+import { LogoIcon } from '@/commons/components/icons';
 import { Spinner } from '@/commons/components/spinner';
 
 import { useAnonymousLogin } from './hooks/index.anonymous.login.hook';
@@ -23,8 +24,6 @@ import styles from './styles.module.css';
 
 // i18n 대비 텍스트 상수 분리
 const TEXTS = {
-  APP_ICON: 'RR',
-  APP_NAME: 'RouteRun',
   GOOGLE_LOGIN: 'Google 계정으로 로그인',
   GUEST_LOGIN: '게스트 로그인',
 } as const;
@@ -76,10 +75,7 @@ export default function Login({ returnTo = '/' }: LoginProps) {
       <div className={styles.inner}>
         {/* 로고 섹션 */}
         <div className={styles.logoSection} aria-label="RouteRun 로고">
-          <div className={styles.logoIcon} aria-hidden="true">
-            <span className={styles.logoIconText}>{TEXTS.APP_ICON}</span>
-          </div>
-          <span className={styles.logoText}>{TEXTS.APP_NAME}</span>
+          <LogoIcon width={220} height={160} className={styles.logoImage} />
         </div>
 
         {/* 버튼 섹션 */}

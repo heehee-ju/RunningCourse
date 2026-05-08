@@ -1,28 +1,21 @@
+import Image from 'next/image';
+
 type LogoIconProps = {
-  size?: number;
+  width?: number;
+  height?: number;
   className?: string;
 };
 
-export function LogoIcon({ size = 32, className }: LogoIconProps) {
+export function LogoIcon({ width = 44, height = 32, className }: LogoIconProps) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
+    <Image
+      src="/icons/rr-logo.png"
+      alt="RouteRun 로고"
+      width={width}
+      height={height}
       className={className}
-      aria-hidden="true"
-    >
-      <path
-        d="M0 12C0 5.37258 5.37258 0 12 0H20C26.6274 0 32 5.37258 32 12V20C32 26.6274 26.6274 32 20 32H12C5.37258 32 0 26.6274 0 20V12Z"
-        fill="#020618"
-      />
-      <path
-        d="M7.83008 21V11.1016H11.7129C13.9688 11.1016 15.2539 12.373 15.2539 14.3281C15.2539 15.6816 14.6318 16.666 13.5039 17.1445L15.6094 21H13.3398L11.4531 17.4863H9.88086V21H7.83008ZM9.88086 15.8184H11.3301C12.5469 15.8184 13.1348 15.3125 13.1348 14.3281C13.1348 13.3301 12.5469 12.7832 11.3301 12.7832H9.88086V15.8184ZM16.6758 21V11.1016H20.5586C22.8145 11.1016 24.0996 12.373 24.0996 14.3281C24.0996 15.6816 23.4775 16.666 22.3496 17.1445L24.4551 21H22.1855L20.2988 17.4863H18.7266V21H16.6758ZM18.7266 15.8184H20.1758C21.3926 15.8184 21.9805 15.3125 21.9805 14.3281C21.9805 13.3301 21.3926 12.7832 20.1758 12.7832H18.7266V15.8184Z"
-        fill="#FAFAFA"
-      />
-    </svg>
+      draggable={false}
+    />
   );
 }
 
