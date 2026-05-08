@@ -22,8 +22,7 @@ function isMarkerCoordDebugEnabled(): boolean {
   if (typeof window === 'undefined') return false;
   const flag = window.localStorage?.getItem('DEBUG_TMAP_MARKERS');
   if (flag === '0') return false;
-  if (flag === '1') return true;
-  return process.env.NODE_ENV === 'development';
+  return flag === '1';
 }
 
 /** 마커/클러스터 생명주기·부착 상태 로그. 켜기: `localStorage.DEBUG_TMAP_MARKER_LIFECYCLE=1` · 끄기: `=0` */
