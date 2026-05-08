@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 import { Card } from '@/commons/components/card';
 import type { CourseCardView } from '@/commons/types/runroute';
@@ -13,7 +14,6 @@ import styles from './styles.module.css';
 import { SKELETON_CARD_COUNT } from './utils/bottom-sheet';
 
 import type { KeyboardEvent } from 'react';
-import { useEffect, useState } from 'react';
 
 type CoursesListProps = {
   cards?: CourseCardView[];
