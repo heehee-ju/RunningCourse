@@ -4,18 +4,28 @@ import { ModalProvider } from '@/commons/providers/modal/modal.provider';
 import { createClient } from '@/lib/supabase/server';
 import { getUserRouteWriteCount } from '@/services/course/courseService';
 
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 
 import './globals.css';
 
+// favicon.ico, icon.svg, icon.png, apple-icon.png, manifest.json 파일은
+// src/app/ 루트에 위치하면 Next.js App Router가 자동으로 <link>를 주입한다.
 export const metadata: Metadata = {
   title: '루트런 | 내 주변 러닝 코스',
   description: '전국의 러닝 코스를 찾고, 나만의 경로를 기록하여 러너들과 공유해보세요.',
-  icons: {
-    icon: [{ url: '/icons/rr-logo-favicon.png', type: 'image/png', sizes: '64x64' }],
-    shortcut: [{ url: '/icons/rr-logo-favicon.png', type: 'image/png' }],
-    apple: '/icons/rr-logo.png',
+  applicationName: '루트런',
+  appleWebApp: {
+    capable: true,
+    title: '루트런',
+    statusBarStyle: 'default',
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+  ],
 };
 
 export default async function RootLayout({
@@ -56,9 +66,6 @@ export default async function RootLayout({
   return (
     <html lang="ko">
       <head>
-        <link rel="icon" href="/icons/rr-logo-favicon.png" type="image/png" sizes="64x64" />
-        <link rel="shortcut icon" href="/icons/rr-logo-favicon.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/icons/rr-logo.png" />
         {/* TMap SDK가 내부적으로 document.write를 사용해 동기 로드가 필요하다. */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script
