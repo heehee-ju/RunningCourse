@@ -3,18 +3,18 @@
  */
 
 import { useCallback, useRef } from 'react';
-import type { RefObject } from 'react';
 
 import type { Route } from '@/commons/types/runroute';
-import { bindSingleEvent } from '@/components/tmap/map-core/events';
 import { resolveRouteStartForMapMarker } from '@/commons/utils/route-marker-position';
 import { getDistanceCategory, type DistanceCategory } from '@/components/home/utils/course-filter';
+import { bindSingleEvent } from '@/components/tmap/map-core/events';
 import { applyPointerCursorToTmapMarker } from '@/components/tmap/utils/apply-pointer-cursor-to-tmap-marker';
 
 import {
   getRunningCourseMarkerIconUrlForCategory,
   type MarkerVisualState,
 } from '../build-running-course-marker-icon';
+
 import type {
   RouteMarkerEntry,
   TmapLatLng,
@@ -23,29 +23,28 @@ import type {
   TmapMarkerCluster,
   TmapV3API,
 } from '../types';
+import type { MutableRefObject } from 'react';
 
 const ROUTE_MARKER_CLUSTER_ZOOM_AT_OR_BELOW = 14;
 const ROUTE_MARKER_INDIVIDUAL_ZOOM_AT_OR_ABOVE = ROUTE_MARKER_CLUSTER_ZOOM_AT_OR_BELOW + 1;
 const MARKER_VISIBILITY_DEBOUNCE_MS = 140;
 
 type UseRouteMarkersParams = {
-  mapRef: RefObject<TmapMap | null>;
-  routesRef: RefObject<Route[]>;
-  routeMarkerMapRef: RefObject<Map<string, RouteMarkerEntry>>;
-  routeMarkerClusterRef: RefObject<TmapMarkerCluster | null>;
-  routeMarkerClusterGenerationRef: RefObject<number>;
-  routesSyncSigRef: RefObject<string | null>;
-  selectedRouteIdRef: RefObject<string | null>;
-  selectedRouteDataReadyRef: RefObject<boolean>;
-  markerVisibilityTimerRef: RefObject<number | null>;
+  mapRef: MutableRefObject<TmapMap | null>;
+  routesRef: MutableRefObject<Route[]>;
+  routeMarkerMapRef: MutableRefObject<Map<string, RouteMarkerEntry>>;
+  routeMarkerClusterRef: MutableRefObject<TmapMarkerCluster | null>;
+  routeMarkerClusterGenerationRef: MutableRefObject<number>;
+  routesSyncSigRef: MutableRefObject<string | null>;
+  selectedRouteIdRef: MutableRefObject<string | null>;
+  markerVisibilityTimerRef: MutableRefObject<number | null>;
   getTmapv3: () => TmapV3API | undefined;
-  readCoordinateValue: (point: TmapLatLng | undefined, axis: 'lat' | 'lng') => number | null;
   tryReadMarkerAttachedMap: (marker: unknown) => unknown;
   tryReadSdkLatLngFromMarker: (marker: TmapMarker) => { lat: number; lng: number } | null;
   roundCoordForLog: (n: number) => number;
   isMarkerCoordDebugEnabled: () => boolean;
   isMarkerLifecycleDebugEnabled: () => boolean;
-  bottomSheetVisibleHeightRef: RefObject<number>;
+  bottomSheetVisibleHeightRef: MutableRefObject<number>;
   onCourseMarkerClick?: (courseId: string) => void;
   setMarkerHoverCursor: (isHover: boolean) => void;
   syncSelectedRoutePolyline: (courseId: string | null) => void;
@@ -54,7 +53,9 @@ type UseRouteMarkersParams = {
 
 function buildRoutesSyncSignature(routes: Route[]): string {
   return routes
-    .map((r) => `${r.id}:${String(r.start_lat)}:${String(r.start_lng)}:${String(r.distance_meters)}`)
+    .map(
+      (r) => `${r.id}:${String(r.start_lat)}:${String(r.start_lng)}:${String(r.distance_meters)}`,
+    )
     .sort()
     .join('|');
 }
@@ -74,10 +75,8 @@ export function useRouteMarkers({
   routeMarkerClusterGenerationRef,
   routesSyncSigRef,
   selectedRouteIdRef,
-  selectedRouteDataReadyRef,
   markerVisibilityTimerRef,
   getTmapv3,
-  readCoordinateValue,
   tryReadMarkerAttachedMap,
   tryReadSdkLatLngFromMarker,
   roundCoordForLog,
@@ -148,7 +147,13 @@ export function useRouteMarkers({
       console.groupEnd();
       /* eslint-enable no-console */
     },
-    [isMarkerCoordDebugEnabled, roundCoordForLog, tryReadSdkLatLngFromMarker],
+    [
+      isMarkerCoordDebugEnabled,
+      routeMarkerMapRef,
+      roundCoordForLog,
+      selectedRouteIdRef,
+      tryReadSdkLatLngFromMarker,
+    ],
   );
 
   const logRouteMarkerAttachSnapshot = useCallback(
@@ -210,7 +215,14 @@ export function useRouteMarkers({
       console.groupEnd();
       /* eslint-enable no-console */
     },
-    [bottomSheetVisibleHeightRef, isMarkerLifecycleDebugEnabled, mapRef, tryReadMarkerAttachedMap],
+    [
+      bottomSheetVisibleHeightRef,
+      isMarkerLifecycleDebugEnabled,
+      mapRef,
+      routeMarkerClusterRef,
+      routeMarkerMapRef,
+      tryReadMarkerAttachedMap,
+    ],
   );
 
   const tearDownRouteMarkerCluster = useCallback(() => {
@@ -237,7 +249,7 @@ export function useRouteMarkers({
     }
     cluster.setMap?.(null);
     routeMarkerClusterRef.current = null;
-  }, []);
+  }, [routeMarkerClusterRef]);
 
   const syncRouteMarkersDisplayForZoom = useCallback(
     (map: TmapMap) => {
@@ -293,7 +305,9 @@ export function useRouteMarkers({
       const gen = routeMarkerClusterGenerationRef.current;
       const prevMode = routeMarkerRouteDisplayModeRef.current;
       const needsRebuild =
-        prevMode !== 'cluster' || !routeMarkerClusterRef.current || gen !== routeMarkerClusterAttachGenerationRef.current;
+        prevMode !== 'cluster' ||
+        !routeMarkerClusterRef.current ||
+        gen !== routeMarkerClusterAttachGenerationRef.current;
 
       if (needsRebuild) {
         tearDownRouteMarkerCluster();
@@ -325,7 +339,14 @@ export function useRouteMarkers({
       }
       routeMarkerRouteDisplayModeRef.current = 'cluster';
     },
-    [getTmapv3, isTmapRouteMarkerClusterLoaded, tearDownRouteMarkerCluster],
+    [
+      getTmapv3,
+      isTmapRouteMarkerClusterLoaded,
+      routeMarkerClusterGenerationRef,
+      routeMarkerClusterRef,
+      routeMarkerMapRef,
+      tearDownRouteMarkerCluster,
+    ],
   );
 
   const syncMarkerVisibilityByViewport = useCallback(
@@ -346,7 +367,7 @@ export function useRouteMarkers({
         syncMarkerVisibilityByViewport(map);
       }, MARKER_VISIBILITY_DEBOUNCE_MS);
     },
-    [syncMarkerVisibilityByViewport],
+    [markerVisibilityTimerRef, syncMarkerVisibilityByViewport],
   );
 
   const addMarkerListener = useCallback(
@@ -371,11 +392,16 @@ export function useRouteMarkers({
         routeVisualStateHandlerRef.current(routeId, 'default');
       });
     },
-    [setMarkerHoverCursor],
+    [selectedRouteIdRef, setMarkerHoverCursor],
   );
 
   const createRouteMarker = useCallback(
-    (map: TmapMap | null, route: Route, category: DistanceCategory, visualState: MarkerVisualState): TmapMarker | null => {
+    (
+      map: TmapMap | null,
+      route: Route,
+      category: DistanceCategory,
+      visualState: MarkerVisualState,
+    ): TmapMarker | null => {
       const Tmapv3 = getTmapv3();
       const routeStart = resolveRouteStartForMapMarker(route);
       if (!Tmapv3 || !routeStart) return null;
@@ -420,7 +446,13 @@ export function useRouteMarkers({
       });
       bindMarkerDomHoverFallback(marker, routeId);
     },
-    [addMarkerListener, bindMarkerDomHoverFallback, onCourseMarkerClick, setMarkerHoverCursor],
+    [
+      addMarkerListener,
+      bindMarkerDomHoverFallback,
+      onCourseMarkerClick,
+      selectedRouteIdRef,
+      setMarkerHoverCursor,
+    ],
   );
 
   const setRouteMarkerVisualState = useCallback(
@@ -440,7 +472,12 @@ export function useRouteMarkers({
       const routeStart = route ? resolveRouteStartForMapMarker(route) : null;
       if (!map || !route || !routeStart) return;
 
-      const nextMarker = createRouteMarker(isTmapRouteMarkerClusterLoaded() ? null : map, route, markerEntry.category, state);
+      const nextMarker = createRouteMarker(
+        isTmapRouteMarkerClusterLoaded() ? null : map,
+        route,
+        markerEntry.category,
+        state,
+      );
       if (!nextMarker) return;
 
       markerEntry.marker.setMap(null);
@@ -457,7 +494,16 @@ export function useRouteMarkers({
       routeMarkerClusterGenerationRef.current += 1;
       syncRouteMarkersDisplayForZoom(map);
     },
-    [attachRouteMarkerListeners, createRouteMarker, isTmapRouteMarkerClusterLoaded, mapRef, routesRef, syncRouteMarkersDisplayForZoom],
+    [
+      attachRouteMarkerListeners,
+      createRouteMarker,
+      isTmapRouteMarkerClusterLoaded,
+      mapRef,
+      routeMarkerClusterGenerationRef,
+      routeMarkerMapRef,
+      routesRef,
+      syncRouteMarkersDisplayForZoom,
+    ],
   );
   routeVisualStateHandlerRef.current = setRouteMarkerVisualState;
 
@@ -473,7 +519,7 @@ export function useRouteMarkers({
       }
       syncSelectedRoutePolyline(shouldFocusSelectedCourse ? nextSelectedCourseId : null);
     },
-    [setRouteMarkerVisualState, syncSelectedRoutePolyline],
+    [selectedRouteIdRef, setRouteMarkerVisualState, syncSelectedRoutePolyline],
   );
   selectedMarkerVisualHandlerRef.current = syncSelectedMarkerVisual;
 
@@ -481,7 +527,10 @@ export function useRouteMarkers({
     (map: TmapMap, nextRoutes: Route[]) => {
       const normalizedRoutes = nextRoutes
         .map((route) => ({ route, start: resolveRouteStartForMapMarker(route) }))
-        .filter((item): item is { route: Route; start: { lat: number; lng: number } } => item.start !== null);
+        .filter(
+          (item): item is { route: Route; start: { lat: number; lng: number } } =>
+            item.start !== null,
+        );
       const nextIdSet = new Set(normalizedRoutes.map(({ route }) => route.id));
       const removedIds: string[] = [];
       routeMarkerMapRef.current.forEach((_entry, routeId) => {
@@ -500,7 +549,8 @@ export function useRouteMarkers({
 
       normalizedRoutes.forEach(({ route, start }) => {
         const category = getRouteDistanceCategory(route);
-        const state: MarkerVisualState = selectedRouteIdRef.current === route.id ? 'clicked' : 'default';
+        const state: MarkerVisualState =
+          selectedRouteIdRef.current === route.id ? 'clicked' : 'default';
         const existing = routeMarkerMapRef.current.get(route.id);
         if (!existing) return;
         let discardExisting = false;
@@ -534,14 +584,22 @@ export function useRouteMarkers({
         }
       });
 
-      const routesToCreate = normalizedRoutes.filter(({ route }) => !routeMarkerMapRef.current.has(route.id));
+      const routesToCreate = normalizedRoutes.filter(
+        ({ route }) => !routeMarkerMapRef.current.has(route.id),
+      );
       if (routesToCreate.length > 0) {
         clusterStructureChanged = true;
         tearDownRouteMarkerCluster();
         routesToCreate.forEach(({ route, start }) => {
           const category = getRouteDistanceCategory(route);
-          const state: MarkerVisualState = selectedRouteIdRef.current === route.id ? 'clicked' : 'default';
-          const marker = createRouteMarker(isTmapRouteMarkerClusterLoaded() ? null : map, route, category, state);
+          const state: MarkerVisualState =
+            selectedRouteIdRef.current === route.id ? 'clicked' : 'default';
+          const marker = createRouteMarker(
+            isTmapRouteMarkerClusterLoaded() ? null : map,
+            route,
+            category,
+            state,
+          );
           if (!marker) return;
           routeMarkerMapRef.current.set(route.id, {
             marker,
@@ -567,6 +625,10 @@ export function useRouteMarkers({
       getTmapv3,
       isTmapRouteMarkerClusterLoaded,
       logRouteMarkerAttachSnapshot,
+      routeMarkerClusterGenerationRef,
+      routeMarkerMapRef,
+      routesSyncSigRef,
+      selectedRouteIdRef,
       syncRouteMarkersDisplayForZoom,
       tearDownRouteMarkerCluster,
     ],
@@ -583,7 +645,7 @@ export function useRouteMarkers({
     routeMarkerClusterAttachGenerationRef.current = -1;
     routeMarkerOverlaySignatureRef.current = '';
     routesSyncSigRef.current = null;
-  }, [clearSelectedRoutePolyline, tearDownRouteMarkerCluster]);
+  }, [clearSelectedRoutePolyline, routeMarkerMapRef, routesSyncSigRef, tearDownRouteMarkerCluster]);
 
   return {
     syncRouteMarkersDisplayForZoom,

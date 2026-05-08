@@ -3,9 +3,9 @@
  */
 
 import { useCallback, useRef } from 'react';
-import type { RefObject } from 'react';
 
 import type { TmapMap } from '../types';
+import type { RefObject } from 'react';
 
 const MIN_ZOOM_LEVEL = 11;
 const MAX_ZOOM_LEVEL = 19;
@@ -50,17 +50,20 @@ export function useMapZoomControls({
     [onZoomLimitCleared, onZoomLimitReached],
   );
 
-  const enforceMinZoomLevel = useCallback((map: TmapMap): number | null => {
-    const currentZoom = map.getZoom();
-    if (typeof currentZoom !== 'number') return null;
-    if (currentZoom < MIN_ZOOM_LEVEL) {
-      map.setZoom(MIN_ZOOM_LEVEL);
-      notifyZoomLimitState(MIN_ZOOM_LEVEL);
-      return MIN_ZOOM_LEVEL;
-    }
-    notifyZoomLimitState(currentZoom);
-    return currentZoom;
-  }, [notifyZoomLimitState]);
+  const enforceMinZoomLevel = useCallback(
+    (map: TmapMap): number | null => {
+      const currentZoom = map.getZoom();
+      if (typeof currentZoom !== 'number') return null;
+      if (currentZoom < MIN_ZOOM_LEVEL) {
+        map.setZoom(MIN_ZOOM_LEVEL);
+        notifyZoomLimitState(MIN_ZOOM_LEVEL);
+        return MIN_ZOOM_LEVEL;
+      }
+      notifyZoomLimitState(currentZoom);
+      return currentZoom;
+    },
+    [notifyZoomLimitState],
+  );
 
   const adjustZoomLevel = useCallback(
     (delta: 1 | -1) => {

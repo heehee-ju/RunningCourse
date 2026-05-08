@@ -3,16 +3,17 @@
  */
 
 import { useCallback, useRef } from 'react';
-import type { RefObject } from 'react';
 
 import type { RouteViewport } from '@/commons/types/runroute';
 
 import { computeVisibleRouteViewportFromMapCanvas } from '../visible-map-viewport';
+
 import type { TmapLatLng, TmapMap } from '../types';
+import type { MutableRefObject } from 'react';
 
 type UseViewportReporterParams = {
   mapContainerId: string;
-  bottomSheetVisibleHeightRef: RefObject<number>;
+  bottomSheetVisibleHeightRef: MutableRefObject<number>;
   onViewportChanged?: (viewport: RouteViewport) => void;
   onVisibleViewportChanged?: (viewport: RouteViewport | null) => void;
   isDebugEnabled: () => boolean;

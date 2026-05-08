@@ -3,7 +3,6 @@
  */
 
 import { useCallback, useRef } from 'react';
-import type { RefObject } from 'react';
 
 import type { Route } from '@/commons/types/runroute';
 import {
@@ -14,6 +13,7 @@ import {
 import { getPedestrianRoute } from '@/repositories/map.repository';
 
 import type { TmapLatLng, TmapMap, TmapPolyline, TmapV3API } from '../types';
+import type { MutableRefObject } from 'react';
 
 const ROUTE_POLYLINE_FIT_BOUNDS_PADDING_PX = 196;
 const ROUTE_BOUNDS_INFLATE_RATIO = 1.42;
@@ -51,10 +51,10 @@ function clampRoutePolylineFitZoom(map: TmapMap): void {
 
 type UseSelectedRoutePolylineParams = {
   mapContainerId: string;
-  routesRef: RefObject<Route[]>;
-  selectedRouteIdRef: RefObject<string | null>;
-  mapRef: RefObject<TmapMap | null>;
-  bottomSheetVisibleHeightRef: RefObject<number>;
+  routesRef: MutableRefObject<Route[]>;
+  selectedRouteIdRef: MutableRefObject<string | null>;
+  mapRef: MutableRefObject<TmapMap | null>;
+  bottomSheetVisibleHeightRef: MutableRefObject<number>;
   getTmapv3: () => TmapV3API | undefined;
   clampHomeMapZoom: (map: TmapMap) => void;
   readCoordinateValue: (point: TmapLatLng | undefined, axis: 'lat' | 'lng') => number | null;
@@ -130,14 +130,17 @@ export function useSelectedRoutePolyline({
         return;
       }
 
-      const fallbackLine = dedupeConsecutiveCoordinates(extractPathCoordinates(route.path_data, route.id));
+      const fallbackLine = dedupeConsecutiveCoordinates(
+        extractPathCoordinates(route.path_data, route.id),
+      );
       const savedPoints = extractSavedRoutePoints(route.path_data);
 
       const abortController = new AbortController();
       routePolylineAbortRef.current = abortController;
 
       const isStale = (): boolean =>
-        generation !== routePolylineGenerationRef.current || selectedRouteIdRef.current !== courseId;
+        generation !== routePolylineGenerationRef.current ||
+        selectedRouteIdRef.current !== courseId;
 
       void (async () => {
         let lineCoordinates = fallbackLine;
@@ -167,7 +170,9 @@ export function useSelectedRoutePolyline({
         const liveTmap = getTmapv3();
         if (!liveMap || !liveTmap || lineCoordinates.length < 2) return;
 
-        const latLngPath = lineCoordinates.map((coordinate) => new liveTmap.LatLng(coordinate.lat, coordinate.lng));
+        const latLngPath = lineCoordinates.map(
+          (coordinate) => new liveTmap.LatLng(coordinate.lat, coordinate.lng),
+        );
         const previousPolyline = selectedRoutePolylineRef.current;
         const nextPolyline = new liveTmap.Polyline({
           map: liveMap,
@@ -193,8 +198,9 @@ export function useSelectedRoutePolyline({
         const southWest = new liveTmap.LatLng(padded.minLat, padded.minLng);
         const northEast = new liveTmap.LatLng(padded.maxLat, padded.maxLng);
 
-        const LatLngBounds = (liveTmap as unknown as { LatLngBounds?: new (sw: unknown, ne: unknown) => unknown })
-          .LatLngBounds;
+        const LatLngBounds = (
+          liveTmap as unknown as { LatLngBounds?: new (sw: unknown, ne: unknown) => unknown }
+        ).LatLngBounds;
         if (typeof LatLngBounds === 'function') {
           const bounds = new LatLngBounds(southWest, northEast);
           liveMap.fitBounds(bounds, ROUTE_POLYLINE_FIT_BOUNDS_PADDING_PX);
