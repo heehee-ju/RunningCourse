@@ -2,6 +2,7 @@ import Image from 'next/image';
 
 import { Button } from '@/commons/components/button';
 import { Icon } from '@/commons/components/icons';
+import { LogoIcon } from '@/commons/components/icons/logo';
 
 import styles from './styles.module.css';
 
@@ -89,7 +90,9 @@ export function Card({
           {thumbnailUrl ? (
             <Image src={thumbnailUrl} alt="" fill className={styles.thumbnailImage} />
           ) : (
-            <span className={styles.thumbnailPlaceholder}>썸네일</span>
+            <span className={styles.thumbnailPlaceholder}>
+              <LogoIcon width={56} height={56} />
+            </span>
           )}
         </div>
 
