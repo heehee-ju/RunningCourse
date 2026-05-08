@@ -96,7 +96,7 @@ export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) 
       <div className={styles.bottomPanel}>
         <div className={styles.metaPanel}>
           <p className={styles.metaText}>
-            선택지점 {points.length}개 | 확정거리{' '}
+            경로 지점 {points.length}개 | 총 거리{' '}
             {distanceKm !== null ? `${distanceKm.toFixed(2)}km` : '-'}
           </p>
           {isPointLimitReached && (
