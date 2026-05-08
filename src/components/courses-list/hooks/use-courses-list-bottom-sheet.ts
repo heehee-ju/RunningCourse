@@ -25,17 +25,22 @@ import type { PanInfo } from 'framer-motion';
 
 export type SheetPositionPayload = {
   state: BottomSheetState;
+  /** 지도 뷰포트·데이터 쿼리용(사용자 의도 상태 기준, 자동 collapse와 무관) */
   visibleHeight: number;
+  /** 실제 화면에 보이는 시트 높이(플로팅 버튼 배치 등 UI용) */
+  visualVisibleHeight: number;
 };
 
 type UseCoursesListBottomSheetParams = {
   openPeekFromCollapsedSignal?: number;
+  isEmpty?: boolean;
   onSheetPositionChange?: (payload: SheetPositionPayload) => void;
 };
 
 /** 바텀시트 높이·드래그·부모 동기화 로직 */
 export function useCoursesListBottomSheet({
   openPeekFromCollapsedSignal,
+  isEmpty = false,
   onSheetPositionChange,
 }: UseCoursesListBottomSheetParams) {
   const [sheetState, setSheetState] = useState<BottomSheetState>('peek');
@@ -49,8 +54,9 @@ export function useCoursesListBottomSheet({
   );
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const cardListRef = useRef<HTMLDivElement | null>(null);
-  const isSheetInteractionLocked = false;
-  const effectiveSheetState: BottomSheetState = isSheetInteractionLocked ? 'peek' : sheetState;
+  // 표시할 코스가 없으면 시트를 collapsed로 강제하고 인터랙션을 막음
+  const isSheetInteractionLocked = isEmpty;
+  const effectiveSheetState: BottomSheetState = isSheetInteractionLocked ? 'collapsed' : sheetState;
 
   const handleToggleByClick = () => {
     if (isSheetInteractionLocked) return;
@@ -179,14 +185,33 @@ export function useCoursesListBottomSheet({
     };
   }, [liveTranslateY]);
 
+  // 부모에게는 사용자 의도(sheetState) 기준 상태/높이를 보고한다.
+  // isEmpty로 인한 자동 collapse는 시각적으로만 적용되며,
+  // 지도 가시 뷰포트가 시트 자동 변동에 흔들려 routes ↔ 시트 상태가 무한 루프되는 것을 방지한다.
   useEffect(() => {
-    const visibleHeightByState = Math.max(24, effectiveSheetHeight - liveTranslateY);
+    const reportedTranslateY = computeSheetTranslateY({
+      effectiveSheetState: sheetState,
+      effectiveSheetHeight,
+      isDragging,
+      dragOffsetY,
+      peekVisibleHeight: PEEK_VISIBLE_HEIGHT,
+    });
+    const reportedVisibleHeight = Math.max(24, effectiveSheetHeight - reportedTranslateY);
+    const visualVisibleHeight = Math.max(24, effectiveSheetHeight - liveTranslateY);
 
     onSheetPositionChange?.({
-      state: effectiveSheetState,
-      visibleHeight: roundUpToEven(visibleHeightByState),
+      state: sheetState,
+      visibleHeight: roundUpToEven(reportedVisibleHeight),
+      visualVisibleHeight: roundUpToEven(visualVisibleHeight),
     });
-  }, [effectiveSheetHeight, effectiveSheetState, liveTranslateY, onSheetPositionChange]);
+  }, [
+    effectiveSheetHeight,
+    liveTranslateY,
+    sheetState,
+    isDragging,
+    dragOffsetY,
+    onSheetPositionChange,
+  ]);
 
   const handlePanStart = () => {
     if (isSheetInteractionLocked) return;

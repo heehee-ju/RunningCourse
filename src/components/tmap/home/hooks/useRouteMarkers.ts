@@ -25,7 +25,7 @@ import type {
 } from '../types';
 import type { MutableRefObject } from 'react';
 
-const ROUTE_MARKER_CLUSTER_ZOOM_AT_OR_BELOW = 14;
+const ROUTE_MARKER_CLUSTER_ZOOM_AT_OR_BELOW = 13;
 const ROUTE_MARKER_INDIVIDUAL_ZOOM_AT_OR_ABOVE = ROUTE_MARKER_CLUSTER_ZOOM_AT_OR_BELOW + 1;
 const MARKER_VISIBILITY_DEBOUNCE_MS = 140;
 

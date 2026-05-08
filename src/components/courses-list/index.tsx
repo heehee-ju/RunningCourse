@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 import { Card } from '@/commons/components/card';
 import type { CourseCardView } from '@/commons/types/runroute';
@@ -17,6 +18,8 @@ import type { KeyboardEvent } from 'react';
 type CoursesListProps = {
   cards?: CourseCardView[];
   isLoading?: boolean;
+  /** false면 아직 조회 뷰포트 없음 — 빈 목록으로 시트 접힘 고정하지 않음 */
+  isRouteQueryViewportReady?: boolean;
   isCourseLiked?: (courseId: string) => boolean;
   getCourseLikeCount?: (courseId: string) => number;
   openPeekFromCollapsedSignal?: number;
@@ -27,12 +30,30 @@ type CoursesListProps = {
 export function CoursesList({
   cards = [],
   isLoading = false,
+  isRouteQueryViewportReady = true,
   isCourseLiked,
   getCourseLikeCount,
   openPeekFromCollapsedSignal,
   onSheetPositionChange,
   onCourseSelect,
 }: CoursesListProps) {
+  /** 한 번 빈 목록이 확정되면 코스가 생길 때까지 재로딩 중에도 접힌 상태 유지 */
+  const [holdEmptySheetCollapsed, setHoldEmptySheetCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (cards.length > 0) {
+      setHoldEmptySheetCollapsed(false);
+      return;
+    }
+    if (!isRouteQueryViewportReady) {
+      return;
+    }
+    if (!isLoading && cards.length === 0) {
+      setHoldEmptySheetCollapsed(true);
+    }
+  }, [isLoading, cards.length, isRouteQueryViewportReady]);
+
+  const isEmpty = cards.length === 0 && holdEmptySheetCollapsed;
   const {
     sheetRef,
     cardListRef,
@@ -45,6 +66,7 @@ export function CoursesList({
     handlePanStart,
   } = useCoursesListBottomSheet({
     openPeekFromCollapsedSignal,
+    isEmpty,
     onSheetPositionChange,
   });
 
@@ -120,9 +142,6 @@ export function CoursesList({
             />
           </div>
         ))}
-        {!isLoading && cards.length === 0 ? (
-          <p className={styles.emptyState}>표시할 코스가 없습니다.</p>
-        ) : null}
       </div>
     </div>
   );
