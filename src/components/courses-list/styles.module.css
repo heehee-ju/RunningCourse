@@ -151,14 +151,3 @@
   margin-top: auto;
 }
 
-.emptyState {
-  margin: 0;
-  padding: 8px 4px;
-  color: var(--color-grey-500);
-  font-family: var(--typography-body-sm-ko-mobile-regular-font-family);
-  font-size: var(--typography-body-sm-ko-mobile-regular-font-size);
-  font-style: var(--typography-body-sm-ko-mobile-regular-font-style);
-  font-weight: var(--typography-body-sm-ko-mobile-regular-font-weight);
-  letter-spacing: var(--typography-body-sm-ko-mobile-regular-letter-spacing);
-  line-height: var(--typography-body-sm-ko-mobile-regular-line-height);
-}

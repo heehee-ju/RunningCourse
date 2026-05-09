@@ -20,11 +20,13 @@ import {
   RotateCcw,
   Save,
   Scan,
+  Sparkles,
   SquarePlus,
   Trash2,
   Undo2,
   UserRound,
   Footprints,
+  X,
 } from 'lucide-react';
 
 import styles from './styles.module.css';
@@ -46,6 +48,7 @@ const iconRegistry = {
   rotateCcw: RotateCcw,
   save: Save,
   scan: Scan,
+  sparkles: Sparkles,
   squarePlus: SquarePlus,
   trash2: Trash2,
   userRound: UserRound,
@@ -56,6 +59,7 @@ const iconRegistry = {
   logOut: LogOut,
   sportShoe: Footprints,
   'undo-2': Undo2,
+  x: X,
 } as const;
 
 export type IconName = keyof typeof iconRegistry;

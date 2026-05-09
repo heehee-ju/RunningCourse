@@ -63,6 +63,8 @@ function roundCoordForLog(n: number): number {
 
 type TmapHomeProps = {
   bottomSheetVisibleHeight?: number;
+  /** 실제 보이는 시트 높이(플로팅 컨트롤 bottom). 미지정 시 bottomSheetVisibleHeight와 동일 */
+  bottomSheetVisualVisibleHeight?: number;
   isBottomSheetExpanded?: boolean;
   routes?: Route[];
   initialViewport?: RouteViewport | null;
@@ -119,6 +121,7 @@ function getCurrentLocationIndicatorIconUrl(size: number): string {
 
 export function TmapHome({
   bottomSheetVisibleHeight = 24,
+  bottomSheetVisualVisibleHeight,
   isBottomSheetExpanded = false,
   routes = [],
   initialViewport = null,
@@ -156,6 +159,7 @@ export function TmapHome({
   const markerHoverCountRef = useRef(0);
   const bottomSheetVisibleHeightRef = useRef(bottomSheetVisibleHeight);
   bottomSheetVisibleHeightRef.current = bottomSheetVisibleHeight;
+  const sheetChromeBottomHeight = bottomSheetVisualVisibleHeight ?? bottomSheetVisibleHeight;
   const lastMapContainerSizeRef = useRef<{ width: number; height: number }>({
     width: 0,
     height: 0,
@@ -672,9 +676,9 @@ export function TmapHome({
   }, [emitViewportReports, syncRouteMarkersDisplayForZoomByHook]);
 
   const sheetControlPositionClassName =
-    bottomSheetVisibleHeight <= 24 ? styles.sheetControlsCollapsed : styles.sheetControlsPeek;
+    sheetChromeBottomHeight <= 24 ? styles.sheetControlsCollapsed : styles.sheetControlsPeek;
   const shouldHideFloatingControls =
-    isBottomSheetExpanded || (isMobileOrTabletViewport && bottomSheetVisibleHeight >= 320);
+    isBottomSheetExpanded || (isMobileOrTabletViewport && sheetChromeBottomHeight >= 320);
 
   return (
     <div ref={rootRef} className={styles.root}>

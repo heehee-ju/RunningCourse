@@ -59,7 +59,7 @@ export function useHomeToast({
       noCourseToastDelayTimerRef.current = null;
     }
 
-    if (!mapMoveSignal || isLoading || !!errorMessage) {
+    if (isLoading || !!errorMessage) {
       setHomeToast((previous) => (previous?.type === 'no-course' ? null : previous));
       return;
     }
@@ -71,7 +71,7 @@ export function useHomeToast({
     noCourseToastDelayTimerRef.current = window.setTimeout(() => {
       showHomeToast('no-course', '해당 영역에 등록된 코스가 없습니다.');
       noCourseToastDelayTimerRef.current = null;
-    }, 1500);
+    }, 1000);
 
     return () => {
       if (noCourseToastDelayTimerRef.current !== null) {
