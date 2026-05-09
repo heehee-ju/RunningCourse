@@ -18,6 +18,7 @@ import { useHomeToast } from './hooks/use-home-toast';
 import { useHomeUrlSync } from './hooks/use-home-url-sync';
 import { useHomeVisibleRouteViewport } from './hooks/use-home-visible-viewport';
 import { useReferenceLocation } from './hooks/use-reference-location';
+import { OnboardingModal } from './onboarding-modal';
 import styles from './styles.module.css';
 import { buildCourseCardViews, type DistanceCategory } from './utils/course-filter';
 import { TAB_ITEMS } from './utils/home-constants';
@@ -27,6 +28,7 @@ import {
 } from './utils/home-route-derivations';
 
 export function Home() {
+  const [isOnboardingVisible, setIsOnboardingVisible] = useState(true);
   const [sheetVisibleHeight, setSheetVisibleHeight] = useState(260);
   const [sheetVisualVisibleHeight, setSheetVisualVisibleHeight] = useState(260);
   const sheetVisibleHeightRef = useRef(sheetVisibleHeight);
@@ -146,6 +148,7 @@ export function Home() {
 
   return (
     <section className={styles.container}>
+      {isOnboardingVisible && <OnboardingModal onClose={() => setIsOnboardingVisible(false)} />}
       <div className={styles.topChrome}>
         <Header showLogo showLeftIcon={false} showRightIcon={false} title="루트런" />
       </div>

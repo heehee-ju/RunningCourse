@@ -1,0 +1,336 @@
+/* ===== overlay ===== */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background-color: color-mix(in srgb, var(--color-black-500) 50%, transparent);
+}
+
+/* ===== modal card ===== */
+
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  height: 542px;
+  background-color: var(--color-white-500);
+  border-radius: 24px;
+  padding: 20px 20px 16px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== close button ===== */
+
+.closeButton {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-black-500);
+}
+
+/* ===== step content wrapper ===== */
+
+.stepContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ===== step dots ===== */
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+  flex-shrink: 0;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-grey-100);
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+}
+
+.dotActive {
+  background-color: var(--color-green-400);
+}
+
+/* ===== common step elements ===== */
+
+.badge {
+  display: block;
+  width: fit-content;
+  margin: 0 auto 12px;
+  background-color: var(--color-green-50);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-green-300);
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-black-500);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.titleGreen {
+  color: var(--color-green-400);
+}
+
+.subtitle {
+  margin: 0 0 14px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-white_grey-800);
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ===== hint box ===== */
+
+.hintBox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--color-green-50);
+  border-radius: 10px;
+  padding: 12px 14px;
+  height: 60px;
+  box-sizing: border-box;
+  margin-top: auto;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+
+.hintIcon {
+  flex-shrink: 0;
+  color: var(--color-green-400);
+}
+
+.hintText {
+  margin: 0;
+  font-size: 11px;
+  color: var(--color-white_grey-800);
+  line-height: 1.5;
+}
+
+.tipLabel {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-green-400);
+  background-color: var(--color-green-100);
+  border-radius: 4px;
+  padding: 2px 6px;
+  line-height: 1;
+}
+
+/* ===== navigation buttons ===== */
+
+.buttonRow {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.buttonPrev {
+  flex: 1;
+  height: 44px;
+  border-radius: 999px;
+  background-color: var(--color-grey-100);
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-black-500);
+  cursor: pointer;
+}
+
+.buttonPrev:active {
+  background-color: var(--color-dark_grey-100);
+}
+
+.buttonNext {
+  flex: 1;
+  height: 44px;
+  border-radius: 999px;
+  background-color: var(--color-green-400);
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-white-500);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.buttonNext:active {
+  background-color: var(--color-green-500);
+}
+
+/* ===== step 1 image ===== */
+
+.step1ImageWrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.step1Image {
+  width: 100%;
+  height: auto;
+  max-width: 256px;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* ===== step 2 image ===== */
+
+.step2ImageBg {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.step2FillImage {
+  object-fit: cover;
+}
+
+/* ===== step 3 guide ===== */
+
+.guideSection {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.guideSteps {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.guideItem {
+  display: flex;
+  gap: 10px;
+}
+
+.guideItemLeft {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.guideIconWrap {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.guideIconBg {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background-color: var(--color-green-50);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-green-400);
+}
+
+.guideStepNum {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  /* Figma: bg #14943a, text #a2d7af — 토큰 없음 */
+  background-color: #14943a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 500;
+  color: #a2d7af;
+  line-height: 1;
+}
+
+.guideConnector {
+  width: 1px;
+  flex: 1;
+  min-height: 22px;
+  background-color: var(--color-green-100);
+  margin: 3px 0;
+}
+
+.guideItemContent {
+  flex: 1;
+  padding-top: 4px;
+  padding-bottom: 14px;
+}
+
+.guideStepTitle {
+  margin: 0 0 3px;
+  font-size: 11px;
+  font-weight: 500;
+  /* Figma: #505050 — 근접 토큰 없음 */
+  color: #505050;
+}
+
+.guideStepDesc {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.4;
+  /* Figma: #6b6b6b — 근접 토큰 없음 */
+  color: #6b6b6b;
+}
+
+.guideImageWrap {
+  flex-shrink: 0;
+  align-self: flex-start;
+  width: 90px;
+}
+
+.guideImage {
+  width: 90px;
+  height: auto;
+  border-radius: 8px;
+}
