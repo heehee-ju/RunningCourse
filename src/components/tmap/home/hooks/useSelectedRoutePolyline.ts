@@ -32,6 +32,7 @@ function padRouteBoundsForHomeFit(
   maxLat: number,
   minLng: number,
   maxLng: number,
+  overlayRatio: number,
 ): { minLat: number; maxLat: number; minLng: number; maxLng: number } {
   const cLat = (minLat + maxLat) / 2;
   const cLng = (minLng + maxLng) / 2;
@@ -39,9 +40,12 @@ function padRouteBoundsForHomeFit(
   let lngSpan = maxLng - minLng;
   latSpan = Math.max(latSpan * ROUTE_BOUNDS_INFLATE_RATIO, ROUTE_BOUNDS_MIN_SPAN_LAT);
   lngSpan = Math.max(lngSpan * ROUTE_BOUNDS_INFLATE_RATIO, ROUTE_BOUNDS_MIN_SPAN_LNG);
+  const visibleLatSpanRatio = Math.max(0.28, 1 - overlayRatio);
+  const mapLatSpan = latSpan / visibleLatSpanRatio;
+  const shiftedCenterLat = cLat - (mapLatSpan * overlayRatio) / 2;
   return {
-    minLat: cLat - latSpan / 2,
-    maxLat: cLat + latSpan / 2,
+    minLat: shiftedCenterLat - mapLatSpan / 2,
+    maxLat: shiftedCenterLat + mapLatSpan / 2,
     minLng: cLng - lngSpan / 2,
     maxLng: cLng + lngSpan / 2,
   };
@@ -84,9 +88,6 @@ function fitRouteInVisibleArea({
         ? ROUTE_POLYLINE_FIT_PADDING_PROFILE.tablet
         : ROUTE_POLYLINE_FIT_PADDING_PROFILE.desktop;
 
-  const padded = padRouteBoundsForHomeFit(minLat, maxLat, minLng, maxLng);
-  const southWest = new Tmapv3.LatLng(padded.minLat, padded.minLng);
-  const northEast = new Tmapv3.LatLng(padded.maxLat, padded.maxLng);
   const LatLngBounds = (
     Tmapv3 as unknown as { LatLngBounds?: new (sw: unknown, ne: unknown) => unknown }
   ).LatLngBounds;
@@ -94,36 +95,20 @@ function fitRouteInVisibleArea({
   const mapElement = document.getElementById(mapContainerId);
   const mapHeightPx = mapElement?.clientHeight ?? 0;
   const clampedOverlayPx = Math.min(Math.max(0, bottomSheetVisibleHeight), mapHeightPx);
-  const fitPadding = {
-    top: paddingProfile.safeMarginPx,
-    right: paddingProfile.safeMarginPx,
-    bottom:
-      paddingProfile.safeMarginPx +
-      clampedOverlayPx +
-      paddingProfile.bottomExtraMarginPx,
-    left: paddingProfile.safeMarginPx,
-  };
-  const fallbackPaddingPx = Math.max(
-    fitPadding.top,
-    fitPadding.right,
-    fitPadding.bottom,
-    fitPadding.left,
-  );
+  const overlayRatio =
+    mapHeightPx > 0
+      ? Math.min(0.72, (clampedOverlayPx + paddingProfile.bottomExtraMarginPx) / mapHeightPx)
+      : 0;
+
+  const padded = padRouteBoundsForHomeFit(minLat, maxLat, minLng, maxLng, overlayRatio);
+  const southWest = new Tmapv3.LatLng(padded.minLat, padded.minLng);
+  const northEast = new Tmapv3.LatLng(padded.maxLat, padded.maxLng);
 
   if (typeof LatLngBounds === 'function') {
     const bounds = new LatLngBounds(southWest, northEast);
-    const fitBoundsWithUnknownPadding = map.fitBounds as unknown as (
-      boundsArg: unknown,
-      paddingArg?: unknown,
-    ) => void;
-    try {
-      fitBoundsWithUnknownPadding(bounds, fitPadding);
-    } catch {
-      fitBoundsWithUnknownPadding(bounds, fallbackPaddingPx);
-    }
+    map.fitBounds(bounds);
     return;
   }
-
   map.fitBounds(southWest, northEast);
 }
 
@@ -218,33 +203,14 @@ export function useSelectedRoutePolyline({
         generation !== routePolylineGenerationRef.current ||
         selectedRouteIdRef.current !== courseId;
 
-      void (async () => {
-        let lineCoordinates = fallbackLine;
-
-        if (savedPoints.length >= 2) {
-          try {
-            const coordsForApi = savedPoints.map((p) => ({ lat: p.lat, lng: p.lng }));
-            const result = await getPedestrianRoute(coordsForApi, abortController.signal);
-            const next = dedupeConsecutiveCoordinates(
-              result.path
-                .map((c) => ({ lat: Number(c.lat), lng: Number(c.lng) }))
-                .filter((c) => Number.isFinite(c.lat) && Number.isFinite(c.lng)),
-            );
-            if (next.length >= 2) {
-              lineCoordinates = next;
-            }
-          } catch (error) {
-            if (abortController.signal.aborted) return;
-            // eslint-disable-next-line no-console
-            console.warn('[TmapHome] 보행자 경로 재계산 실패, 저장 path 사용:', error);
-          }
-        }
-
-        if (isStale()) return;
+      const renderSelectedRoutePolyline = (
+        lineCoordinates: Array<{ lat: number; lng: number }>,
+      ): boolean => {
+        if (isStale()) return false;
 
         const liveMap = mapRef.current;
         const liveTmap = getTmapv3();
-        if (!liveMap || !liveTmap || lineCoordinates.length < 2) return;
+        if (!liveMap || !liveTmap || lineCoordinates.length < 2) return false;
 
         const latLngPath = lineCoordinates.map(
           (coordinate) => new liveTmap.LatLng(coordinate.lat, coordinate.lng),
@@ -260,7 +226,7 @@ export function useSelectedRoutePolyline({
         selectedRoutePolylineRef.current = nextPolyline;
         previousPolyline?.setMap(null);
 
-        if (typeof liveMap.fitBounds !== 'function') return;
+        if (typeof liveMap.fitBounds !== 'function') return true;
 
         const latValues = lineCoordinates.map((c) => c.lat);
         const lngValues = lineCoordinates.map((c) => c.lng);
@@ -281,6 +247,33 @@ export function useSelectedRoutePolyline({
 
         clampRoutePolylineFitZoom(liveMap);
         clampHomeMapZoom(liveMap);
+        return true;
+      };
+
+      void (async () => {
+        const initialLineCoordinates = fallbackLine.length >= 2 ? fallbackLine : savedPoints;
+
+        // API 재계산이 늦거나 실패해도 마커 클릭 즉시 코스 전체 bounds를 먼저 맞춘다.
+        renderSelectedRoutePolyline(initialLineCoordinates);
+
+        if (savedPoints.length < 2) return;
+
+        try {
+          const coordsForApi = savedPoints.map((p) => ({ lat: p.lat, lng: p.lng }));
+          const result = await getPedestrianRoute(coordsForApi, abortController.signal);
+          const next = dedupeConsecutiveCoordinates(
+            result.path
+              .map((c) => ({ lat: Number(c.lat), lng: Number(c.lng) }))
+              .filter((c) => Number.isFinite(c.lat) && Number.isFinite(c.lng)),
+          );
+          if (next.length >= 2) {
+            renderSelectedRoutePolyline(next);
+          }
+        } catch (error) {
+          if (abortController.signal.aborted) return;
+          // eslint-disable-next-line no-console
+          console.warn('[TmapHome] 보행자 경로 재계산 실패, 저장 좌표로 코스 표시:', error);
+        }
       })();
     },
     [
