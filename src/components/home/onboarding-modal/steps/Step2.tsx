@@ -41,9 +41,7 @@ export function Step2({ onNext, onPrev }: Props) {
       <div className={styles.hintBox}>
         <Icon name="heartFilled" size={18} className={styles.hintIcon} />
         <p className={styles.hintText}>
-          내가 작성한 코스와 좋아요 누른 코스를
-          <br />
-          관리해봐요!
+          구글 계정으로 로그인하면 <br />내 코스와 좋아요 누른 코스를 저장해 둘 수 있어요!
         </p>
       </div>
 
