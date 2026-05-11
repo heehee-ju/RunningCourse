@@ -71,7 +71,7 @@ type TmapHomeProps = {
   selectedCourseId?: string | null;
   /** 마커 클릭 시마다 증가 — 보이는 지도 영역 기준 1회 중앙 정렬에만 사용 */
   markerClickRecenterToken?: number;
-  onCourseMarkerClick?: (courseId: string) => void;
+  onCourseMarkerClick?: (courseId: string, route: Route) => void;
   /** 데이터 필터용 — 전체 지도 bounds(getBounds), 바텀시트 오버레이 미반영 */
   onViewportChanged?: (viewport: RouteViewport) => void;
   /** UI용 — 바텀시트가 가리지 않는 영역 근사 bounds */

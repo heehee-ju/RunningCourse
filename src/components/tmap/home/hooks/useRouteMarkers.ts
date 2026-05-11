@@ -45,7 +45,7 @@ type UseRouteMarkersParams = {
   isMarkerCoordDebugEnabled: () => boolean;
   isMarkerLifecycleDebugEnabled: () => boolean;
   bottomSheetVisibleHeightRef: MutableRefObject<number>;
-  onCourseMarkerClick?: (courseId: string) => void;
+  onCourseMarkerClick?: (courseId: string, route: Route) => void;
   setMarkerHoverCursor: (isHover: boolean) => void;
   syncSelectedRoutePolyline: (courseId: string | null) => void;
   clearSelectedRoutePolyline: () => void;
@@ -441,9 +441,11 @@ export function useRouteMarkers({
         routeVisualStateHandlerRef.current(routeId, 'default');
       });
       addMarkerListener(marker, 'click', () => {
+        const route = routesRef.current.find((item) => item.id === routeId);
+        if (!route) return;
         // 선택 상태의 단일 소스를 부모 selectedCourseId로 유지해
         // 클릭 1회당 선택 동기화/폴리라인 렌더가 중복 실행되지 않도록 한다.
-        onCourseMarkerClick?.(routeId);
+        onCourseMarkerClick?.(routeId, route);
       });
       bindMarkerDomHoverFallback(marker, routeId);
     },
@@ -451,6 +453,7 @@ export function useRouteMarkers({
       addMarkerListener,
       bindMarkerDomHoverFallback,
       onCourseMarkerClick,
+      routesRef,
       selectedRouteIdRef,
       setMarkerHoverCursor,
     ],

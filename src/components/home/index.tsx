@@ -1,14 +1,14 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Icon } from '@/commons/components/icons';
 import { TabButton } from '@/commons/components/tab';
 import { ROUTES } from '@/commons/constants/url';
 import { useCourseLikes } from '@/commons/hooks/useCourseLikes';
 import { Header } from '@/commons/layout/header';
-import type { RouteViewport } from '@/commons/types/runroute';
+import type { Route, RouteViewport } from '@/commons/types/runroute';
 import { CoursesList } from '@/components/courses-list';
 import { TmapHome } from '@/components/tmap/home';
 
@@ -37,6 +37,8 @@ export function Home() {
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<Set<DistanceCategory>>(new Set());
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  /** 뷰포트 밖으로 이동해도 선택 코스를 목록·지도에 유지 (조회 결과 우선, 없을 때만 사용) */
+  const [selectedRouteSnapshot, setSelectedRouteSnapshot] = useState<Route | null>(null);
   const [mapMoveSignal, setMapMoveSignal] = useState(0);
   const [visibleRouteViewport, setVisibleRouteViewport] = useState<RouteViewport | null>(null);
   const [frozenVisibleRouteViewport, setFrozenVisibleRouteViewport] =
@@ -75,6 +77,14 @@ export function Home() {
     setFrozenVisibleRouteViewport,
   });
 
+  useEffect(() => {
+    setSelectedRouteSnapshot((previous) => {
+      if (!selectedCourseId) return null;
+      if (previous && previous.id !== selectedCourseId) return null;
+      return previous;
+    });
+  }, [selectedCourseId]);
+
   const { snapshotHomeQueryBeforeDetail } = useHomeUrlSync({
     searchParams,
     pathname: pathname ?? '',
@@ -95,8 +105,15 @@ export function Home() {
   });
 
   const filteredRoutes = useMemo(
-    () => computeFilteredRoutesForHome(routes, selectedCategories, selectedCourseId, allRoutes),
-    [routes, selectedCategories, selectedCourseId, allRoutes],
+    () =>
+      computeFilteredRoutesForHome(
+        routes,
+        selectedCategories,
+        selectedCourseId,
+        allRoutes,
+        selectedRouteSnapshot,
+      ),
+    [allRoutes, routes, selectedCategories, selectedCourseId, selectedRouteSnapshot],
   );
 
   const routesForCourseList = useMemo(
@@ -106,8 +123,9 @@ export function Home() {
         effectiveQueryViewport,
         selectedCourseId,
         allRoutes,
+        selectedRouteSnapshot,
       ),
-    [allRoutes, effectiveQueryViewport, filteredRoutes, selectedCourseId],
+    [allRoutes, effectiveQueryViewport, filteredRoutes, selectedCourseId, selectedRouteSnapshot],
   );
 
   const courseCards = useMemo(
@@ -115,14 +133,20 @@ export function Home() {
     [routesForCourseList, referenceLocation, selectedCourseId],
   );
 
-  const courseLikeCounts = useMemo(
-    () =>
-      allRoutes.reduce<Record<string, number>>((acc, route) => {
-        acc[route.id] = route.likes_count;
-        return acc;
-      }, {}),
-    [allRoutes],
-  );
+  const courseLikeCounts = useMemo(() => {
+    const acc = allRoutes.reduce<Record<string, number>>((map, route) => {
+      map[route.id] = route.likes_count;
+      return map;
+    }, {});
+    if (
+      selectedCourseId &&
+      selectedRouteSnapshot?.id === selectedCourseId &&
+      acc[selectedCourseId] === undefined
+    ) {
+      acc[selectedCourseId] = selectedRouteSnapshot.likes_count;
+    }
+    return acc;
+  }, [allRoutes, selectedCourseId, selectedRouteSnapshot]);
   const { isCourseLiked, getCourseLikeCount } = useCourseLikes(courseLikeCounts);
 
   const toggleCategory = (category: DistanceCategory) => {
@@ -137,8 +161,9 @@ export function Home() {
     });
   };
 
-  const handleCourseMarkerClick = useCallback((courseId: string) => {
+  const handleCourseMarkerClick = useCallback((courseId: string, route: Route) => {
     setSelectedCourseId(courseId);
+    setSelectedRouteSnapshot(route);
     setMarkerClickRecenterToken((previous) => previous + 1);
     if (sheetVisibleHeightRef.current <= 24) {
       setOpenPeekFromCollapsedSignal((previous) => previous + 1);

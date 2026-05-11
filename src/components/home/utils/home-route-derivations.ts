@@ -9,12 +9,26 @@ import {
   type DistanceCategory,
 } from './course-filter';
 
+/** 뷰포트 조회 결과 우선, 없을 때만 마커 클릭 시 저장한 스냅샷 사용 */
+function resolveSelectedRouteForMerge(
+  selectedCourseId: string | null,
+  allRoutes: Route[],
+  selectedRouteSnapshot: Route | null,
+): Route | null {
+  if (!selectedCourseId) return null;
+  const fromFetch = allRoutes.find((route) => route.id === selectedCourseId);
+  if (fromFetch) return fromFetch;
+  if (selectedRouteSnapshot?.id === selectedCourseId) return selectedRouteSnapshot;
+  return null;
+}
+
 /** 선택 코스가 카테고리 필터 밖이어도 목록·지도에 유지하도록 병합 */
 export function computeFilteredRoutesForHome(
   routes: Route[],
   selectedCategories: Set<DistanceCategory>,
   selectedCourseId: string | null,
   allRoutes: Route[],
+  selectedRouteSnapshot: Route | null,
 ): Route[] {
   const base = filterRoutesByCategories(routes, selectedCategories);
   if (!selectedCourseId) {
@@ -23,7 +37,7 @@ export function computeFilteredRoutesForHome(
   if (base.some((route) => route.id === selectedCourseId)) {
     return base;
   }
-  const selected = allRoutes.find((route) => route.id === selectedCourseId);
+  const selected = resolveSelectedRouteForMerge(selectedCourseId, allRoutes, selectedRouteSnapshot);
   if (!selected) {
     return base;
   }
@@ -36,6 +50,7 @@ export function computeRoutesForCourseListForHome(
   effectiveQueryViewport: RouteViewport | null,
   selectedCourseId: string | null,
   allRoutes: Route[],
+  selectedRouteSnapshot: Route | null,
 ): Route[] {
   const base = filterRoutesByRouteViewport(filteredRoutes, effectiveQueryViewport);
   if (!selectedCourseId) {
@@ -44,7 +59,7 @@ export function computeRoutesForCourseListForHome(
   if (base.some((route) => route.id === selectedCourseId)) {
     return base;
   }
-  const selected = allRoutes.find((route) => route.id === selectedCourseId);
+  const selected = resolveSelectedRouteForMerge(selectedCourseId, allRoutes, selectedRouteSnapshot);
   if (!selected) {
     return base;
   }
