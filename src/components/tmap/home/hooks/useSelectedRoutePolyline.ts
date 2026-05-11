@@ -12,10 +12,16 @@ import {
 } from '@/components/tmap/course-detail/path-data';
 import { getPedestrianRoute } from '@/repositories/map.repository';
 
-import type { TmapLatLng, TmapMap, TmapPolyline, TmapV3API } from '../types';
+import type { TmapMap, TmapPolyline, TmapV3API } from '../types';
 import type { MutableRefObject } from 'react';
 
-const ROUTE_POLYLINE_FIT_BOUNDS_PADDING_PX = 196;
+const MOBILE_VIEWPORT_MAX_WIDTH_PX = 768;
+const TABLET_VIEWPORT_MAX_WIDTH_PX = 1200;
+const ROUTE_POLYLINE_FIT_PADDING_PROFILE = {
+  mobile: { safeMarginPx: 16, bottomExtraMarginPx: 24 },
+  tablet: { safeMarginPx: 20, bottomExtraMarginPx: 20 },
+  desktop: { safeMarginPx: 24, bottomExtraMarginPx: 16 },
+} as const;
 const ROUTE_BOUNDS_INFLATE_RATIO = 1.42;
 const ROUTE_BOUNDS_MIN_SPAN_LAT = 0.0088;
 const ROUTE_BOUNDS_MIN_SPAN_LNG = 0.0112;
@@ -49,6 +55,78 @@ function clampRoutePolylineFitZoom(map: TmapMap): void {
   }
 }
 
+function fitRouteInVisibleArea({
+  map,
+  Tmapv3,
+  mapContainerId,
+  bottomSheetVisibleHeight,
+  minLat,
+  maxLat,
+  minLng,
+  maxLng,
+}: {
+  map: TmapMap;
+  Tmapv3: TmapV3API;
+  mapContainerId: string;
+  bottomSheetVisibleHeight: number;
+  minLat: number;
+  maxLat: number;
+  minLng: number;
+  maxLng: number;
+}): void {
+  if (typeof map.fitBounds !== 'function') return;
+
+  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1280;
+  const paddingProfile =
+    viewportWidth <= MOBILE_VIEWPORT_MAX_WIDTH_PX
+      ? ROUTE_POLYLINE_FIT_PADDING_PROFILE.mobile
+      : viewportWidth <= TABLET_VIEWPORT_MAX_WIDTH_PX
+        ? ROUTE_POLYLINE_FIT_PADDING_PROFILE.tablet
+        : ROUTE_POLYLINE_FIT_PADDING_PROFILE.desktop;
+
+  const padded = padRouteBoundsForHomeFit(minLat, maxLat, minLng, maxLng);
+  const southWest = new Tmapv3.LatLng(padded.minLat, padded.minLng);
+  const northEast = new Tmapv3.LatLng(padded.maxLat, padded.maxLng);
+  const LatLngBounds = (
+    Tmapv3 as unknown as { LatLngBounds?: new (sw: unknown, ne: unknown) => unknown }
+  ).LatLngBounds;
+
+  const mapElement = document.getElementById(mapContainerId);
+  const mapHeightPx = mapElement?.clientHeight ?? 0;
+  const clampedOverlayPx = Math.min(Math.max(0, bottomSheetVisibleHeight), mapHeightPx);
+  const fitPadding = {
+    top: paddingProfile.safeMarginPx,
+    right: paddingProfile.safeMarginPx,
+    bottom:
+      paddingProfile.safeMarginPx +
+      clampedOverlayPx +
+      paddingProfile.bottomExtraMarginPx,
+    left: paddingProfile.safeMarginPx,
+  };
+  const fallbackPaddingPx = Math.max(
+    fitPadding.top,
+    fitPadding.right,
+    fitPadding.bottom,
+    fitPadding.left,
+  );
+
+  if (typeof LatLngBounds === 'function') {
+    const bounds = new LatLngBounds(southWest, northEast);
+    const fitBoundsWithUnknownPadding = map.fitBounds as unknown as (
+      boundsArg: unknown,
+      paddingArg?: unknown,
+    ) => void;
+    try {
+      fitBoundsWithUnknownPadding(bounds, fitPadding);
+    } catch {
+      fitBoundsWithUnknownPadding(bounds, fallbackPaddingPx);
+    }
+    return;
+  }
+
+  map.fitBounds(southWest, northEast);
+}
+
 type UseSelectedRoutePolylineParams = {
   mapContainerId: string;
   routesRef: MutableRefObject<Route[]>;
@@ -57,7 +135,6 @@ type UseSelectedRoutePolylineParams = {
   bottomSheetVisibleHeightRef: MutableRefObject<number>;
   getTmapv3: () => TmapV3API | undefined;
   clampHomeMapZoom: (map: TmapMap) => void;
-  readCoordinateValue: (point: TmapLatLng | undefined, axis: 'lat' | 'lng') => number | null;
 };
 
 export function useSelectedRoutePolyline({
@@ -68,7 +145,6 @@ export function useSelectedRoutePolyline({
   bottomSheetVisibleHeightRef,
   getTmapv3,
   clampHomeMapZoom,
-  readCoordinateValue,
 }: UseSelectedRoutePolylineParams) {
   const selectedRoutePolylineRef = useRef<TmapPolyline | null>(null);
   const routePolylineGenerationRef = useRef(0);
@@ -192,50 +268,15 @@ export function useSelectedRoutePolyline({
         const rawMaxLat = Math.max(...latValues);
         const rawMinLng = Math.min(...lngValues);
         const rawMaxLng = Math.max(...lngValues);
-        const rawCenterLat = (rawMinLat + rawMaxLat) / 2;
-        const rawCenterLng = (rawMinLng + rawMaxLng) / 2;
-        const padded = padRouteBoundsForHomeFit(rawMinLat, rawMaxLat, rawMinLng, rawMaxLng);
-        const southWest = new liveTmap.LatLng(padded.minLat, padded.minLng);
-        const northEast = new liveTmap.LatLng(padded.maxLat, padded.maxLng);
-
-        const LatLngBounds = (
-          liveTmap as unknown as { LatLngBounds?: new (sw: unknown, ne: unknown) => unknown }
-        ).LatLngBounds;
-        if (typeof LatLngBounds === 'function') {
-          const bounds = new LatLngBounds(southWest, northEast);
-          liveMap.fitBounds(bounds, ROUTE_POLYLINE_FIT_BOUNDS_PADDING_PX);
-        } else {
-          liveMap.fitBounds(southWest, northEast);
-        }
-
-        requestAnimationFrame(() => {
-          if (isStale()) return;
-          const mapAfterFit = mapRef.current;
-          const tmapAfterFit = getTmapv3();
-          if (!mapAfterFit || !tmapAfterFit) return;
-
-          const mapElement = document.getElementById(mapContainerId);
-          const mapHeightPx = mapElement?.clientHeight ?? 0;
-          if (mapHeightPx <= 0) return;
-
-          const overlayPx = Math.min(Math.max(0, bottomSheetVisibleHeightRef.current), mapHeightPx);
-          if (overlayPx <= 0) return;
-
-          const boundsAfterFit = mapAfterFit.getBounds?.();
-          const northEastAfterFit = boundsAfterFit?.getNorthEast?.();
-          const southWestAfterFit = boundsAfterFit?.getSouthWest?.();
-          if (!boundsAfterFit || !northEastAfterFit || !southWestAfterFit) return;
-
-          const northEastLat = readCoordinateValue(northEastAfterFit, 'lat');
-          const southWestLat = readCoordinateValue(southWestAfterFit, 'lat');
-          if (northEastLat === null || southWestLat === null) return;
-
-          const latSpan = northEastLat - southWestLat;
-          if (!Number.isFinite(latSpan) || latSpan <= 0) return;
-
-          // 바텀시트로 가려진 높이를 반영해 폴리라인 중심을 시각적 중앙으로 보정한다.
-          const latOffset = (overlayPx / 2 / mapHeightPx) * latSpan;
-          mapAfterFit.setCenter(new tmapAfterFit.LatLng(rawCenterLat - latOffset, rawCenterLng));
+        fitRouteInVisibleArea({
+          map: liveMap,
+          Tmapv3: liveTmap,
+          mapContainerId,
+          bottomSheetVisibleHeight: bottomSheetVisibleHeightRef.current,
+          minLat: rawMinLat,
+          maxLat: rawMaxLat,
+          minLng: rawMinLng,
+          maxLng: rawMaxLng,
         });
 
         clampRoutePolylineFitZoom(liveMap);
@@ -248,7 +289,6 @@ export function useSelectedRoutePolyline({
       getTmapv3,
       mapContainerId,
       mapRef,
-      readCoordinateValue,
       routesRef,
       selectedRouteIdRef,
     ],
