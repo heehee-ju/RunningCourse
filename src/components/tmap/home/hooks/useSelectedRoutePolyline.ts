@@ -27,17 +27,6 @@ const ROUTE_BOUNDS_MIN_SPAN_LAT = 0.0088;
 const ROUTE_BOUNDS_MIN_SPAN_LNG = 0.0112;
 const ROUTE_POLYLINE_FIT_MAX_ZOOM_LEVEL = 15;
 
-function areLineCoordinatesSame(
-  a: Array<{ lat: number; lng: number }>,
-  b: Array<{ lat: number; lng: number }>,
-): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i += 1) {
-    if (a[i]?.lat !== b[i]?.lat || a[i]?.lng !== b[i]?.lng) return false;
-  }
-  return true;
-}
-
 function padRouteBoundsForHomeFit(
   minLat: number,
   maxLat: number,
@@ -277,7 +266,7 @@ export function useSelectedRoutePolyline({
               .map((c) => ({ lat: Number(c.lat), lng: Number(c.lng) }))
               .filter((c) => Number.isFinite(c.lat) && Number.isFinite(c.lng)),
           );
-          if (next.length >= 2 && !areLineCoordinatesSame(next, initialLineCoordinates)) {
+          if (next.length >= 2) {
             renderSelectedRoutePolyline(next);
           }
         } catch (error) {
