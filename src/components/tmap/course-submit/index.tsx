@@ -4,32 +4,31 @@ import { useEffect, useId, useRef } from 'react';
 
 import { Button } from '@/commons/components/button';
 import { Icon } from '@/commons/components/icons';
-import { SEOUL_CITY_HALL_COORDINATE } from '@/commons/utils/geo';
-import { getTmapv3Runtime } from '@/components/tmap/map-core/runtime';
+import { useCurrentLocationMarker } from '@/components/tmap/commons/hooks/useCurrentLocationMarker';
+import { getCurrentPositionWithFallback } from '@/components/tmap/commons/utils/geolocation';
+import { getTmapv3Runtime } from '@/components/tmap/utils/runtime';
 
 import { useCourseMap, type SaveRoutePayload } from './hooks/useCourseMap';
 import styles from './styles.module.css';
 
+import type { TmapMap } from '../home/types';
+
 type CourseSubmitMapProps = {
   onSaveRoute?: (payload: SaveRoutePayload) => void;
-};
-
-const DEFAULT_GEOLOCATION_OPTIONS: PositionOptions = {
-  enableHighAccuracy: false,
-  timeout: 6000,
-  maximumAge: 15000,
 };
 
 export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) {
   const mapContainerId = useId().replace(/:/g, '-');
   const mapContainerIdRef = useRef(`tmap-course-submit-${mapContainerId}`);
 
+  const { createCurrentLocationMarker } = useCurrentLocationMarker();
   const {
     points,
     distanceKm,
     isSaving,
     errorMessage,
     isPointLimitReached,
+    mapRef,
     initializeMap,
     undo,
     saveRoute,
@@ -46,34 +45,21 @@ export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) 
         return;
       }
 
-      const runInit = (center: { lat: number; lng: number }) => {
+      getCurrentPositionWithFallback((lat, lng) => {
         if (cancelled) return;
-        initializeMap(mapElementId, center);
-      };
-
-      if (typeof window !== 'undefined' && navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            runInit({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            });
-          },
-          () => {
-            runInit(SEOUL_CITY_HALL_COORDINATE);
-          },
-          DEFAULT_GEOLOCATION_OPTIONS,
-        );
-      } else {
-        runInit(SEOUL_CITY_HALL_COORDINATE);
-      }
+        initializeMap(mapElementId, { lat, lng });
+        const map = mapRef.current;
+        if (map) {
+          createCurrentLocationMarker(map as TmapMap, lat, lng);
+        }
+      });
     };
 
     initialize();
     return () => {
       cancelled = true;
     };
-  }, [initializeMap]);
+  }, [createCurrentLocationMarker, initializeMap, mapRef]);
 
   return (
     <section className={styles.root}>

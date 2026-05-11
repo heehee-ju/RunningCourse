@@ -16,6 +16,7 @@
 
 import { Button } from '@/commons/components/button';
 import { LogoIcon } from '@/commons/components/icons';
+import { LOGO_SIZE_PRESETS } from '@/commons/components/icons/logo-presets';
 import { Spinner } from '@/commons/components/spinner';
 
 import { useAnonymousLogin } from './hooks/index.anonymous.login.hook';
@@ -27,6 +28,7 @@ const TEXTS = {
   GOOGLE_LOGIN: 'Google 계정으로 로그인',
   GUEST_LOGIN: '게스트 로그인',
 } as const;
+const LOGIN_LOGO_SIZE = LOGO_SIZE_PRESETS.login;
 
 export type LoginProps = {
   /** 로그인 성공 후 이동할 경로 (미들웨어 `?next=` 등에서 전달) */
@@ -75,7 +77,11 @@ export default function Login({ returnTo = '/' }: LoginProps) {
       <div className={styles.inner}>
         {/* 로고 섹션 */}
         <div className={styles.logoSection} aria-label="RouteRun 로고">
-          <LogoIcon width={220} height={220} />
+          <LogoIcon
+            width={LOGIN_LOGO_SIZE.width}
+            height={LOGIN_LOGO_SIZE.height}
+            className={styles.logo}
+          />
         </div>
 
         {/* 버튼 섹션 */}

@@ -32,6 +32,8 @@ export type UpdateCourseActionResult =
   | { success: true; data: Route }
   | { success: false; error: string };
 
+export type ToggleCourseLikeActionResult = { likeCount: number | null; error: string | null };
+
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function isValidUuid(value: string): boolean {
@@ -47,6 +49,51 @@ function toDistanceMetersSafe(km: number): number {
     throw new Error('지도에서 경로를 완전히 지정해 주세요.');
   }
   return Math.round(km * 1000);
+}
+
+/**
+ * 코스 좋아요 상태를 토글한다.
+ * revalidateMypage=true 일 때만 `/mypage` Router Cache를 무효화한다.
+ * 마이페이지에서 호출할 때는 false를 넘겨 즉각적인 카드 제거를 막는다.
+ */
+export async function toggleCourseLikeAction(
+  courseId: string,
+  shouldLike: boolean,
+  revalidateMypage = true,
+): Promise<ToggleCourseLikeActionResult> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { likeCount: null, error: '로그인이 필요합니다.' };
+  }
+
+  if (shouldLike) {
+    const { error } = await courseRepository.upsertRouteLike(supabase, user.id, courseId);
+    if (error) return { likeCount: null, error: error.message };
+  } else {
+    const { error } = await courseRepository.deleteRouteLike(supabase, user.id, courseId);
+    if (error) return { likeCount: null, error: error.message };
+  }
+
+  const { count, error: countError } = await courseRepository.getRouteLikeCount(supabase, courseId);
+  if (countError) return { likeCount: null, error: countError.message };
+
+  const nextLikeCount = count ?? 0;
+  const { error: updateError } = await courseRepository.updateRouteLikesCount(
+    supabase,
+    courseId,
+    nextLikeCount,
+  );
+  if (updateError) return { likeCount: null, error: updateError.message };
+
+  if (revalidateMypage) {
+    revalidatePath('/mypage');
+  }
+
+  return { likeCount: nextLikeCount, error: null };
 }
 
 /**

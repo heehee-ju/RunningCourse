@@ -1,8 +1,8 @@
 import { useCallback, useRef } from 'react';
 
 import type { TmapCoordinate, TmapMapLike, TmapMarkerLike, TmapV3 } from '@/commons/types/tmap';
-import { getTmapv3Runtime } from '@/components/tmap/map-core/runtime';
 import { getWaypointMarkerIconUrl } from '@/components/tmap/utils/build-waypoint-marker-icon';
+import { getTmapv3Runtime } from '@/components/tmap/utils/runtime';
 
 import type { RefObject } from 'react';
 

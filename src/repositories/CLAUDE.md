@@ -28,4 +28,4 @@ repositories/
 
 - `course.repository.ts`의 `createRoute`와 `createCourse`는 동일 함수의 별칭이다 (`export const createCourse = createRoute`). 새로운 호출부는 `createCourse`를 사용한다.
 - `map.repository.ts`는 Supabase가 아닌 TMap REST API를 fetch로 직접 호출한다. `NEXT_PUBLIC_TMAP_API_KEY` 환경 변수가 없으면 `null`/`throw`로 처리한다.
-- `route_likes` 관련 Supabase 쿼리 일부가 현재 `courseLikeService.ts`에 있다 (역사적 이유). 신규 좋아요 로직은 이 레포지토리에 추가한다.
+- `route_likes` write 로직(`upsertRouteLike`, `deleteRouteLike`, `getRouteLikeCount`, `updateRouteLikesCount`)은 이 레포지토리에 있고, `toggleCourseLikeAction`에서 직접 호출한다. read 전용 조회(`fetchLikedCourseIds`)만 `courseLikeService.ts`에 남아있다.

@@ -139,6 +139,7 @@ export function useCourseMap({ onSaveRoute }: UseCourseMapParams = {}) {
     errorMessage,
     isPointLimitReached,
     waypointCount,
+    mapRef,
     setMapInstance,
     initializeMap,
     addPoint,

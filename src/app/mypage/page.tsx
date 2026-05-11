@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { ROUTES } from '@/commons/constants/url';
 import Mypage from '@/components/mypage';
@@ -24,5 +25,9 @@ export default async function MypagePage() {
     fallbackDisplayName,
   });
 
-  return <Mypage profile={profile} myRoutes={myRoutes} likedRoutes={likedRoutes} />;
+  return (
+    <Suspense>
+      <Mypage profile={profile} myRoutes={myRoutes} likedRoutes={likedRoutes} />
+    </Suspense>
+  );
 }

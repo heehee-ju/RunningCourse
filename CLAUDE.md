@@ -15,7 +15,7 @@ npm run build            # 프로덕션 빌드
 npm run lint             # ESLint 실행
 npm run storybook        # Storybook (localhost:6006)
 npm run build-storybook  # Storybook 정적 사이트 빌드
-npx vitest               # 테스트 실행 (Playwright 기반)
+npx vitest               # Storybook 컴포넌트/인터랙션 테스트 (Vitest 브라우저 모드)
 ```
 
 ## 아키텍처

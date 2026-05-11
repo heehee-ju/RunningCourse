@@ -28,7 +28,6 @@ import {
 } from './utils/home-route-derivations';
 
 export function Home() {
-  const [isOnboardingVisible, setIsOnboardingVisible] = useState(true);
   const [sheetVisibleHeight, setSheetVisibleHeight] = useState(260);
   const [sheetVisualVisibleHeight, setSheetVisualVisibleHeight] = useState(260);
   const sheetVisibleHeightRef = useRef(sheetVisibleHeight);
@@ -148,7 +147,7 @@ export function Home() {
 
   return (
     <section className={styles.container}>
-      {isOnboardingVisible && <OnboardingModal onClose={() => setIsOnboardingVisible(false)} />}
+      <OnboardingModal />
       <div className={styles.topChrome}>
         <Header showLogo showLeftIcon={false} showRightIcon={false} title="루트런" />
       </div>

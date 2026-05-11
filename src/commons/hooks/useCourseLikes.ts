@@ -6,10 +6,11 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { toggleCourseLikeAction } from '@/actions/course.action';
 import { ROUTES } from '@/commons/constants/url';
 import { useAuth } from '@/commons/providers/auth/auth.provider';
 import { useModal } from '@/commons/providers/modal/modal.provider';
-import { fetchLikedCourseIds, setCourseLike } from '@/services/course/courseLikeService';
+import { fetchLikedCourseIds } from '@/services/course/courseLikeService';
 
 import type { User } from '@supabase/supabase-js';
 
@@ -115,7 +116,7 @@ export function useCourseLikes(initialLikeCounts: LikeCountsByCourseId) {
       });
       setOptimisticLikeCounts((previous) => ({ ...previous, [courseId]: nextCount }));
 
-      const result = await setCourseLike(user.id, courseId, shouldLike);
+      const result = await toggleCourseLikeAction(courseId, shouldLike, pathname !== '/mypage');
       if (!result.error) {
         if (typeof result.likeCount === 'number') {
           setOptimisticLikeCounts((previous) => ({
@@ -138,7 +139,15 @@ export function useCourseLikes(initialLikeCounts: LikeCountsByCourseId) {
       });
       setOptimisticLikeCounts((previous) => ({ ...previous, [courseId]: previousCount }));
     },
-    [canUseCourseLike, getCourseLikeCount, isLoading, likedCourseIds, openGoogleLoginConfirm, user],
+    [
+      canUseCourseLike,
+      getCourseLikeCount,
+      isLoading,
+      likedCourseIds,
+      openGoogleLoginConfirm,
+      pathname,
+      user,
+    ],
   );
 
   return { isCourseLiked, getCourseLikeCount, toggleCourseLike };

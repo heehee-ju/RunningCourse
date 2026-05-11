@@ -33,6 +33,7 @@ actions/
 - `createCourseAction(input)` — 코스 등록, 역지오코딩 포함. 성공 시 `/`로 redirect
 - `deleteCourseAction(routeId)` — 본인 코스 삭제. `/mypage`, `/` 캐시 무효화
 - `updateCourseAction(input)` — 제목·설명·이미지 수정. 상세·목록 캐시 무효화
+- `toggleCourseLikeAction(courseId, shouldLike, revalidateMypage?)` — 좋아요 추가/제거 후 likes_count 갱신. Service 레이어 없이 Repository를 직접 호출한다.
 
 **user.action.ts**
 - `checkNicknameAction(nickname)` — 닉네임 형식 검사 + 중복 확인
@@ -43,3 +44,4 @@ actions/
 - `deleteGuestAccount`는 `SUPABASE_SERVICE_ROLE_KEY`를 사용하며 **서버에서만** 실행된다. 이 키는 절대 클라이언트 번들에 포함되면 안 된다.
 - `auth.action.ts`의 `resolveSiteOrigin()`은 `NEXT_PUBLIC_SITE_URL` → `VERCEL_URL` → `localhost` 순으로 폴백한다. 새 환경 추가 시 이 함수를 확인한다.
 - redirect URL 검증: `isRelativePath()`로 `/`로 시작하는 상대 경로만 허용해 open redirect를 방지한다.
+- `toggleCourseLikeAction`은 예외적으로 Service를 거치지 않고 Repository를 직접 호출한다. 여러 Repository 메서드를 순차 실행(upsert → count → update)하므로 Action 내에서 처리한다.
