@@ -265,23 +265,24 @@
 
 .guideGroup {
   display: flex;
-  align-items: center;
+  align-self: center;
+  justify-content: center;
+  align-items: stretch;
 
   gap: 12px;
   width: 100%;
-  height: auto;
+  height: 100%;
   max-height: 100%;
-  padding-top: 4px;
 }
 
 .guideSteps {
   flex: 0 1 auto;
+  align-self: stretch;
   display: flex;
-  align-items: flex-start;
+  /* align-items: flex-start; */
   justify-content: center;
   flex-direction: column;
   width: auto;
-  min-width: 0;
 }
 
 .guideItem {
@@ -351,10 +352,14 @@
   padding-bottom: 12px;
 }
 
+.guideItem:last-child .guideItemContent {
+  padding-bottom: 0;
+}
+
 .guideStepTitle {
   display: inline-block;
   width: fit-content;
-  margin: 0 0 3px;
+  margin: 0 0 2px;
   font-size: 11px;
   font-weight: 500;
   /* Figma: #505050 — 근접 토큰 없음 */
@@ -372,10 +377,9 @@
 }
 
 .guideImageWrap {
-  flex: 0 0 40%;
-  align-self: flex-start;
-  min-width: 96px;
-  max-width: 100%;
+  flex: 1 1 0;
+  align-self: stretch;
+  min-width: 0;
   overflow: hidden;
   border-radius: 8px;
 }
@@ -385,5 +389,5 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: left center;
+  object-position: left 0%;
 }
