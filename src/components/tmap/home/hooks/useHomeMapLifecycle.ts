@@ -5,22 +5,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Route, RouteViewport } from '@/commons/types/runroute';
-import { SEOUL_CITY_HALL_COORDINATE } from '@/commons/utils/geo';
+import {
+  getCurrentPositionWithFallback,
+  PRECISE_GEOLOCATION_OPTIONS,
+} from '@/components/tmap/commons/utils/geolocation';
 
 import type { RouteMarkerEntry, TmapMap, TmapMarker, TmapMarkerCluster, TmapV3API } from '../types';
 import type { MutableRefObject } from 'react';
-
-const DEFAULT_GEOLOCATION_OPTIONS: PositionOptions = {
-  enableHighAccuracy: false,
-  timeout: 6000,
-  maximumAge: 15000,
-};
-
-const PRECISE_GEOLOCATION_OPTIONS: PositionOptions = {
-  enableHighAccuracy: true,
-  timeout: 10000,
-  maximumAge: 0,
-};
 
 const INITIAL_MAP_ZOOM_LEVEL = 14;
 const SDK_READY_RETRY_DELAY_MS = 120;
@@ -49,7 +40,7 @@ type UseHomeMapLifecycleParams = {
   getTmapv3: () => TmapV3API | undefined;
   minZoomLevel: number;
   maxZoomLevel: number;
-  createCustomMarker: (map: TmapMap, lat: number, lng: number) => void;
+  createCurrentLocationMarker: (map: TmapMap, lat: number, lng: number) => void;
   centerMapToLocationInVisibleArea: (map: TmapMap, lat: number, lng: number) => void;
   applyInitialViewport: (map: TmapMap) => void;
   enforceMinZoomLevel: (map: TmapMap) => number | null;
@@ -84,7 +75,7 @@ export function useHomeMapLifecycle({
   getTmapv3,
   minZoomLevel,
   maxZoomLevel,
-  createCustomMarker,
+  createCurrentLocationMarker,
   centerMapToLocationInVisibleArea,
   applyInitialViewport,
   enforceMinZoomLevel,
@@ -105,7 +96,7 @@ export function useHomeMapLifecycle({
       (position) => {
         const { latitude, longitude } = position.coords;
         centerMapToLocationInVisibleArea(map, latitude, longitude);
-        createCustomMarker(map, latitude, longitude);
+        createCurrentLocationMarker(map, latitude, longitude);
       },
       (error) => {
         // eslint-disable-next-line no-console
@@ -114,7 +105,7 @@ export function useHomeMapLifecycle({
       },
       PRECISE_GEOLOCATION_OPTIONS,
     );
-  }, [centerMapToLocationInVisibleArea, createCustomMarker, mapRef]);
+  }, [centerMapToLocationInVisibleArea, createCurrentLocationMarker, mapRef]);
 
   useEffect(() => {
     let cancelled = false;
@@ -160,7 +151,7 @@ export function useHomeMapLifecycle({
 
       map.setZoomLimit?.(minZoomLevel, maxZoomLevel);
       lastAppliedZoomRef.current = map.getZoom();
-      createCustomMarker(map, lat, lng);
+      createCurrentLocationMarker(map, lat, lng);
       mapRef.current = map;
       setMapReadyToken((previous) => previous + 1);
 
@@ -192,19 +183,9 @@ export function useHomeMapLifecycle({
     };
 
     const startWithLocation = () => {
-      if (typeof window !== 'undefined' && navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            initTmap(position.coords.latitude, position.coords.longitude);
-          },
-          () => {
-            initTmap(SEOUL_CITY_HALL_COORDINATE.lat, SEOUL_CITY_HALL_COORDINATE.lng);
-          },
-          DEFAULT_GEOLOCATION_OPTIONS,
-        );
-      } else {
-        initTmap(SEOUL_CITY_HALL_COORDINATE.lat, SEOUL_CITY_HALL_COORDINATE.lng);
-      }
+      getCurrentPositionWithFallback((lat, lng) => {
+        initTmap(lat, lng);
+      });
     };
 
     function checkLibrary() {
@@ -282,7 +263,7 @@ export function useHomeMapLifecycle({
     clearSelectedRoutePolyline,
     clearViewportReporterState,
     clearZoomControlState,
-    createCustomMarker,
+    createCurrentLocationMarker,
     emitViewportReports,
     enforceMinZoomLevel,
     getTmapv3,

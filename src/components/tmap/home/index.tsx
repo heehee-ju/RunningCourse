@@ -4,9 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Icon } from '@/commons/components/icons';
 import type { Route, RouteViewport } from '@/commons/types/runroute';
+import { useCurrentLocationMarker } from '@/components/tmap/commons/hooks/useCurrentLocationMarker';
 import { bindMapEvents } from '@/components/tmap/map-core/events';
 import { getTmapv3Runtime } from '@/components/tmap/map-core/runtime';
-import { applyPointerCursorToTmapMarker } from '@/components/tmap/utils/apply-pointer-cursor-to-tmap-marker';
 
 import { useHomeMapLifecycle } from './hooks/useHomeMapLifecycle';
 import { useMapZoomControls } from './hooks/useMapZoomControls';
@@ -93,32 +93,6 @@ function clampHomeMapZoom(map: TmapMap): void {
   }
 }
 
-function toSvgDataUrl(svgMarkup: string): string {
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svgMarkup)}`;
-}
-
-function getCurrentLocationIndicatorSizeByZoom(_zoomLevel: number | undefined): number {
-  return 40;
-}
-
-function getCurrentLocationIndicatorIconUrl(size: number): string {
-  // 기본 A 마커 대신, 파란 점 + 반투명 링 형태의 현재 위치 인디케이터를 사용한다.
-  const center = size / 2;
-  const outerRingRadius = Math.round(size * 0.42);
-  const innerWhiteRadius = Math.round(size * 0.23);
-  const dotRadius = Math.round(size * 0.17);
-  const coreRadius = Math.round(size * 0.13);
-  const svg = `
-<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <circle cx="${center}" cy="${center}" r="${outerRingRadius}" fill="#2F80FF" opacity="0.16"/>
-  <circle cx="${center}" cy="${center}" r="${innerWhiteRadius}" fill="#FFFFFF" opacity="0.98"/>
-  <circle cx="${center}" cy="${center}" r="${dotRadius}" fill="#2F80FF"/>
-  <circle cx="${center}" cy="${center}" r="${coreRadius}" fill="#2F80FF"/>
-</svg>
-`.trim();
-  return toSvgDataUrl(svg);
-}
-
 export function TmapHome({
   bottomSheetVisibleHeight = 24,
   bottomSheetVisualVisibleHeight,
@@ -138,8 +112,8 @@ export function TmapHome({
   // [상태] 지도/마커 인스턴스 참조 관리
   const mapInstance = useRef<TmapMap | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const currentLocationMarkerRef = useRef<TmapMarker | null>(null);
-  const currentLocationCoordinateRef = useRef<{ lat: number; lng: number } | null>(null);
+  const { createCurrentLocationMarker, currentLocationMarkerRef, currentLocationCoordinateRef } =
+    useCurrentLocationMarker();
   const routeMarkerMapRef = useRef<Map<string, RouteMarkerEntry>>(new Map());
   const routeMarkerClusterRef = useRef<TmapMarkerCluster | null>(null);
   /** 코스 마커 인스턴스 집합이 바뀔 때마다 증가 → 클러스터 재부착 필요 */
@@ -273,34 +247,6 @@ export function TmapHome({
     [readCoordinateValue],
   );
 
-  // [마커] 현재 위치 마커 생성 및 좌표 갱신
-  const createCustomMarker = useCallback((map: TmapMap, lat: number, lng: number) => {
-    const Tmapv3 = getTmapv3Runtime();
-    if (!Tmapv3) return;
-    currentLocationCoordinateRef.current = { lat, lng };
-
-    const nextPosition = new Tmapv3.LatLng(lat, lng);
-    const zoomLevel = map.getZoom();
-    const indicatorSize = getCurrentLocationIndicatorSizeByZoom(zoomLevel);
-    const icon = getCurrentLocationIndicatorIconUrl(indicatorSize);
-    const markerOptions: Record<string, unknown> = {
-      position: nextPosition,
-      map: map,
-      title: '내 현재 위치',
-      icon,
-      iconSize: new Tmapv3.Size(indicatorSize, indicatorSize),
-    };
-    if (Tmapv3.Point) {
-      markerOptions.iconAnchor = new Tmapv3.Point(indicatorSize / 2, indicatorSize / 2);
-    }
-
-    // 줌 레벨에 따라 아이콘 크기가 달라지므로 현재 위치 마커는 갱신 시 재생성한다.
-    currentLocationMarkerRef.current?.setMap(null);
-    const locationMarker = new Tmapv3.Marker(markerOptions);
-    applyPointerCursorToTmapMarker(locationMarker);
-    currentLocationMarkerRef.current = locationMarker;
-  }, []);
-
   const { syncSelectedRoutePolyline, clearSelectedRoutePolyline } = useSelectedRoutePolyline({
     mapContainerId: 'map_div',
     routesRef,
@@ -390,7 +336,7 @@ export function TmapHome({
           zoomUpdateRafRef.current = null;
           const currentLocation = currentLocationCoordinateRef.current;
           if (currentLocation) {
-            createCustomMarker(map, currentLocation.lat, currentLocation.lng);
+            createCurrentLocationMarker(map, currentLocation.lat, currentLocation.lng);
           }
           syncRouteMarkersDisplayForZoomByHook(map);
           scheduleMarkerVisibilitySyncByHook(map);
@@ -437,7 +383,8 @@ export function TmapHome({
         boundEndInteractionEvents;
     },
     [
-      createCustomMarker,
+      createCurrentLocationMarker,
+      currentLocationCoordinateRef,
       enforceMinZoomLevel,
       isMapInteractingRef,
       notifyZoomLimitState,
@@ -496,7 +443,7 @@ export function TmapHome({
     getTmapv3: getTmapv3Runtime,
     minZoomLevel: MIN_ZOOM_LEVEL,
     maxZoomLevel: MAX_ZOOM_LEVEL,
-    createCustomMarker,
+    createCurrentLocationMarker,
     centerMapToLocationInVisibleArea,
     applyInitialViewport,
     enforceMinZoomLevel,
