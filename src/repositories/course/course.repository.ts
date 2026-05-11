@@ -212,6 +212,57 @@ export async function getRouteCountByUserId(userId: string): Promise<number> {
   return count ?? 0;
 }
 
+export async function upsertRouteLike(
+  supabase: SupabaseClient,
+  userId: string,
+  routeId: string,
+): Promise<{ error: Error | null }> {
+  const { error } = await supabase
+    .from('route_likes')
+    .upsert({ user_id: userId, route_id: routeId }, { onConflict: 'user_id,route_id' });
+
+  return { error: error ? new Error(error.message) : null };
+}
+
+export async function deleteRouteLike(
+  supabase: SupabaseClient,
+  userId: string,
+  routeId: string,
+): Promise<{ error: Error | null }> {
+  const { error } = await supabase
+    .from('route_likes')
+    .delete()
+    .eq('user_id', userId)
+    .eq('route_id', routeId);
+
+  return { error: error ? new Error(error.message) : null };
+}
+
+export async function getRouteLikeCount(
+  supabase: SupabaseClient,
+  routeId: string,
+): Promise<{ count: number | null; error: Error | null }> {
+  const { count, error } = await supabase
+    .from('route_likes')
+    .select('*', { count: 'exact', head: true })
+    .eq('route_id', routeId);
+
+  return { count: count ?? null, error: error ? new Error(error.message) : null };
+}
+
+export async function updateRouteLikesCount(
+  supabase: SupabaseClient,
+  routeId: string,
+  likesCount: number,
+): Promise<{ error: Error | null }> {
+  const { error } = await supabase
+    .from('routes')
+    .update({ likes_count: likesCount })
+    .eq('id', routeId);
+
+  return { error: error ? new Error(error.message) : null };
+}
+
 export async function deleteRoute(routeId: string, userId: string): Promise<void> {
   const supabase = createClient();
 
