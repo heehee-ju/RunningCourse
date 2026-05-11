@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { Button } from '@/commons/components/button';
 import { Icon } from '@/commons/components/icons';
 import { LogoIcon } from '@/commons/components/icons/logo';
+import { LOGO_SIZE_PRESETS } from '@/commons/components/icons/logo-presets';
 
 import styles from './styles.module.css';
 
@@ -37,6 +38,7 @@ type ActionCardProps = CardBaseProps & {
 };
 
 export type CardProps = DefaultCardProps | ActionCardProps;
+const CARD_THUMBNAIL_LOGO_SIZE = LOGO_SIZE_PRESETS.cardThumbnail;
 
 export function Card({
   className,
@@ -91,7 +93,10 @@ export function Card({
             <Image src={thumbnailUrl} alt="" fill className={styles.thumbnailImage} />
           ) : (
             <span className={styles.thumbnailPlaceholder}>
-              <LogoIcon width={56} height={56} />
+              <LogoIcon
+                width={CARD_THUMBNAIL_LOGO_SIZE.width}
+                height={CARD_THUMBNAIL_LOGO_SIZE.height}
+              />
             </span>
           )}
         </div>

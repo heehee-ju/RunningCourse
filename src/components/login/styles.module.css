@@ -41,6 +41,23 @@
   justify-content: center;
 }
 
+.logo {
+  width: 112px;
+  height: auto;
+}
+
+@media (max-width: 1200px) {
+  .logo {
+    width: 104px;
+  }
+}
+
+@media (max-width: 768px) {
+  .logo {
+    width: 96px;
+  }
+}
+
 
 /* ===== buttons section ===== */
 

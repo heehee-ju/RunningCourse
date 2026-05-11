@@ -12,6 +12,7 @@
 
 import { Icon, LogoIcon } from '@/commons/components/icons';
 import type { IconName } from '@/commons/components/icons';
+import { LOGO_SIZE_PRESETS } from '@/commons/components/icons/logo-presets';
 
 import styles from './styles.module.css';
 
@@ -20,6 +21,7 @@ const COPY = {
   leftIconAriaLabel: '이전',
   rightIconAriaLabel: '옵션',
 } as const;
+const HEADER_LOGO_SIZE = LOGO_SIZE_PRESETS.header;
 
 export type HeaderProps = {
   className?: string;
@@ -52,7 +54,11 @@ export function Header({
     <header className={rootClass}>
       <div className={styles.inner}>
         {showLogo ? (
-          <LogoIcon width={44} height={32} className={styles.logo} />
+          <LogoIcon
+            width={HEADER_LOGO_SIZE.width}
+            height={HEADER_LOGO_SIZE.height}
+            className={styles.logo}
+          />
         ) : showLeftIcon ? (
           <button
             type="button"

@@ -6,15 +6,16 @@ type LogoIconProps = {
   className?: string;
 };
 
-export function LogoIcon({ width = 44, height = 32, className }: LogoIconProps) {
+export function LogoIcon({ width = 44, height = 38, className }: LogoIconProps) {
   return (
     <Image
-      src="/icon.png"
+      src="/logo/logo.svg"
       alt="RouteRun 로고"
       width={width}
       height={height}
       className={className}
       draggable={false}
+      unoptimized
     />
   );
 }

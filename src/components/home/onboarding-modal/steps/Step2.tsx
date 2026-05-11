@@ -26,8 +26,16 @@ export function Step2({ onNext, onPrev }: Props) {
         마음에 드는 코스를 저장해보세요!
       </p>
 
-      <div className={styles.step2ImageBg}>
-        <Image src="/images/onboarding2.png" alt="" fill className={styles.step2FillImage} />
+      <div className={styles.step2ImageArea}>
+        <div className={styles.step2ImageBg}>
+          <Image
+            src="/images/onboarding-step2.png"
+            alt=""
+            fill
+            sizes="(max-width: 360px) 100vw, 320px"
+            className={styles.step2FillImage}
+          />
+        </div>
       </div>
 
       <div className={styles.hintBox}>
@@ -45,7 +53,7 @@ export function Step2({ onNext, onPrev }: Props) {
         </button>
         <button type="button" className={styles.buttonNext} onClick={onNext}>
           다음
-          <Icon name="chevronRight" size={16} />
+          <Icon name="chevronRight" size={16} className={styles.step2NextIcon} />
         </button>
       </div>
     </>
