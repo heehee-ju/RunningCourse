@@ -20,7 +20,7 @@
   height: 542px;
   background-color: var(--color-white-500);
   border-radius: 24px;
-  padding: 20px 20px 16px;
+  padding: 28px 20px 20px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -124,9 +124,11 @@
   padding: 12px 14px;
   height: 60px;
   box-sizing: border-box;
-  margin-top: auto;
-  margin-bottom: 14px;
+  margin: 12px 0;
   overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .hintIcon {
@@ -158,10 +160,12 @@
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+  margin-top: auto;
 }
 
 .buttonPrev {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   height: 44px;
   border-radius: 999px;
   background-color: var(--color-grey-100);
@@ -177,7 +181,8 @@
 }
 
 .buttonNext {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   height: 44px;
   border-radius: 999px;
   background-color: var(--color-green-400);
@@ -190,10 +195,18 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
+  position: relative;
 }
 
 .buttonNext:active {
   background-color: var(--color-green-500);
+}
+
+.step2NextIcon {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
 }
 
 /* ===== step 1 image ===== */
@@ -204,49 +217,87 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 14px;
 }
 
 .step1Image {
   width: 100%;
   height: auto;
-  max-width: 256px;
   max-height: 100%;
   object-fit: contain;
 }
 
 /* ===== step 2 image ===== */
 
+.step2ImageArea {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 4px 0;
+  position: relative;
+  z-index: 1;
+}
+
 .step2ImageBg {
   position: relative;
+  top: 8px;
   width: 100%;
-  height: 200px;
-  border-radius: 12px;
+  max-width: 280px;
+  aspect-ratio: 10 / 9.8;
   overflow: hidden;
-  margin-bottom: 12px;
 }
 
 .step2FillImage {
   object-fit: cover;
+  object-position: center 30%;
+  border-radius: 12px;
+  box-shadow: 0 -1px 12px color-mix(in srgb, var(--color-black-400) 16%, transparent);
+
+  transform: translateY(4px) scale(0.82);
+  transform-origin: center center;
 }
 
 /* ===== step 3 guide ===== */
 
 .guideSection {
+  flex: 1;
+  min-height: 0;
   display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  margin-top: 0;
+  padding: 4px 0 0 0;
+  box-sizing: border-box;
+}
+
+.guideGroup {
+  display: flex;
+  align-self: center;
+  justify-content: center;
+  align-items: stretch;
+
   gap: 12px;
-  margin-bottom: 14px;
+  width: calc(100% - 8px);
+  height: 100%;
+  max-height: 100%;
 }
 
 .guideSteps {
-  flex: 1;
+  flex: 0 1 auto;
+  align-self: stretch;
   display: flex;
+  /* align-items: flex-start; */
+  justify-content: center;
   flex-direction: column;
+  width: auto;
 }
 
 .guideItem {
   display: flex;
   gap: 10px;
+  width: auto;
 }
 
 .guideItemLeft {
@@ -277,7 +328,7 @@
 
 .guideStepNum {
   position: absolute;
-  top: -5px;
+  top: 0;
   right: -5px;
   width: 14px;
   height: 14px;
@@ -302,13 +353,22 @@
 }
 
 .guideItemContent {
-  flex: 1;
-  padding-top: 4px;
-  padding-bottom: 14px;
+  flex: 0 1 auto;
+  display: flex;
+  flex-direction: column;
+  width: auto;
+
+  padding-bottom: 12px;
+}
+
+.guideItem:last-child .guideItemContent {
+  padding-bottom: 0;
 }
 
 .guideStepTitle {
-  margin: 0 0 3px;
+  display: inline-block;
+  width: fit-content;
+  margin: 0 0 2px;
   font-size: 11px;
   font-weight: 500;
   /* Figma: #505050 — 근접 토큰 없음 */
@@ -316,6 +376,8 @@
 }
 
 .guideStepDesc {
+  display: inline-block;
+  width: fit-content;
   margin: 0;
   font-size: 10px;
   line-height: 1.4;
@@ -324,13 +386,18 @@
 }
 
 .guideImageWrap {
-  flex-shrink: 0;
-  align-self: flex-start;
-  width: 90px;
+  flex: 1 1 0;
+  align-self: stretch;
+  min-width: 0;
+  overflow: visible;
+  border-radius: 8px;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-grey-400) 12%, transparent);
 }
 
 .guideImage {
-  width: 90px;
-  height: auto;
-  border-radius: 8px;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: left 0%;
 }

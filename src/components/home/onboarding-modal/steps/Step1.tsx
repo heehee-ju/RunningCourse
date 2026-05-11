@@ -25,7 +25,7 @@ export function Step1({ onNext }: Props) {
 
       <div className={styles.step1ImageWrap}>
         <Image
-          src="/images/onboarding1.png"
+          src="/images/onboarding-step1.png"
           alt=""
           width={467}
           height={321}

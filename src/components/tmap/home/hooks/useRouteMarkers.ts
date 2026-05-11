@@ -441,7 +441,8 @@ export function useRouteMarkers({
         routeVisualStateHandlerRef.current(routeId, 'default');
       });
       addMarkerListener(marker, 'click', () => {
-        selectedMarkerVisualHandlerRef.current(routeId, true);
+        // 선택 상태의 단일 소스를 부모 selectedCourseId로 유지해
+        // 클릭 1회당 선택 동기화/폴리라인 렌더가 중복 실행되지 않도록 한다.
         onCourseMarkerClick?.(routeId);
       });
       bindMarkerDomHoverFallback(marker, routeId);

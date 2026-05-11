@@ -26,16 +26,22 @@ export function Step2({ onNext, onPrev }: Props) {
         마음에 드는 코스를 저장해보세요!
       </p>
 
-      <div className={styles.step2ImageBg}>
-        <Image src="/images/onboarding2.png" alt="" fill className={styles.step2FillImage} />
+      <div className={styles.step2ImageArea}>
+        <div className={styles.step2ImageBg}>
+          <Image
+            src="/images/onboarding-step2.png"
+            alt=""
+            fill
+            sizes="(max-width: 360px) 100vw, 320px"
+            className={styles.step2FillImage}
+          />
+        </div>
       </div>
 
       <div className={styles.hintBox}>
         <Icon name="heartFilled" size={18} className={styles.hintIcon} />
         <p className={styles.hintText}>
-          내가 작성한 코스와 좋아요 누른 코스를
-          <br />
-          관리해봐요!
+          구글 계정으로 로그인하면 <br />내 코스와 좋아요 누른 코스를 저장해 둘 수 있어요!
         </p>
       </div>
 
@@ -45,7 +51,7 @@ export function Step2({ onNext, onPrev }: Props) {
         </button>
         <button type="button" className={styles.buttonNext} onClick={onNext}>
           다음
-          <Icon name="chevronRight" size={16} />
+          <Icon name="chevronRight" size={16} className={styles.step2NextIcon} />
         </button>
       </div>
     </>

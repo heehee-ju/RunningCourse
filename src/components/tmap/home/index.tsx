@@ -255,7 +255,6 @@ export function TmapHome({
     bottomSheetVisibleHeightRef,
     getTmapv3: getTmapv3Runtime,
     clampHomeMapZoom,
-    readCoordinateValue,
   });
 
   const {
