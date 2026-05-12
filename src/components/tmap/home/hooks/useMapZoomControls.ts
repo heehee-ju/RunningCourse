@@ -7,7 +7,7 @@ import { useCallback, useRef } from 'react';
 import type { TmapMap } from '../types';
 import type { RefObject } from 'react';
 
-const MIN_ZOOM_LEVEL = 11;
+const MIN_ZOOM_LEVEL = 8;
 const MAX_ZOOM_LEVEL = 19;
 
 type UseMapZoomControlsParams = {

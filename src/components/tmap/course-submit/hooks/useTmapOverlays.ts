@@ -29,11 +29,12 @@ export function useTmapOverlays(mapRef: RefObject<TmapMapLike | null>) {
         const isStart = index === 0;
         const isEnd = nextPoints.length >= 2 && index === nextPoints.length - 1;
         const role: MarkerRole = isStart ? 'start' : isEnd ? 'end' : 'via';
+        const viaOrder = !isStart && !isEnd ? index : undefined;
 
         const marker = new Tmapv3.Marker({
           // Tmap 공식 예제와 동일하게 LatLng(lat, lon) 순서로 변환한다.
           position: new Tmapv3.LatLng(point.lat, point.lng),
-          icon: getWaypointMarkerIconUrl(role),
+          icon: getWaypointMarkerIconUrl(role, viaOrder),
           map,
         });
         markerRefs.current.push(marker);

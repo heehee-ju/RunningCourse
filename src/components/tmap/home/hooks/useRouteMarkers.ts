@@ -14,6 +14,7 @@ import {
   getRunningCourseMarkerIconUrlForCategory,
   type MarkerVisualState,
 } from '../build-running-course-marker-icon';
+import { syncRouteMarkerDomVisualState } from '../sync-route-marker-dom-visual';
 
 import type {
   RouteMarkerEntry,
@@ -45,7 +46,7 @@ type UseRouteMarkersParams = {
   isMarkerCoordDebugEnabled: () => boolean;
   isMarkerLifecycleDebugEnabled: () => boolean;
   bottomSheetVisibleHeightRef: MutableRefObject<number>;
-  onCourseMarkerClick?: (courseId: string) => void;
+  onCourseMarkerClick?: (courseId: string, route: Route) => void;
   setMarkerHoverCursor: (isHover: boolean) => void;
   syncSelectedRoutePolyline: (courseId: string | null) => void;
   clearSelectedRoutePolyline: () => void;
@@ -441,9 +442,11 @@ export function useRouteMarkers({
         routeVisualStateHandlerRef.current(routeId, 'default');
       });
       addMarkerListener(marker, 'click', () => {
+        const route = routesRef.current.find((item) => item.id === routeId);
+        if (!route) return;
         // 선택 상태의 단일 소스를 부모 selectedCourseId로 유지해
         // 클릭 1회당 선택 동기화/폴리라인 렌더가 중복 실행되지 않도록 한다.
-        onCourseMarkerClick?.(routeId);
+        onCourseMarkerClick?.(routeId, route);
       });
       bindMarkerDomHoverFallback(marker, routeId);
     },
@@ -451,6 +454,7 @@ export function useRouteMarkers({
       addMarkerListener,
       bindMarkerDomHoverFallback,
       onCourseMarkerClick,
+      routesRef,
       selectedRouteIdRef,
       setMarkerHoverCursor,
     ],
@@ -465,6 +469,7 @@ export function useRouteMarkers({
       const icon = getRunningCourseMarkerIconUrlForCategory(markerEntry.category, state);
       if (typeof markerEntry.marker.setIcon === 'function') {
         markerEntry.marker.setIcon(icon);
+        syncRouteMarkerDomVisualState(markerEntry.marker, state);
         return;
       }
 
@@ -492,6 +497,7 @@ export function useRouteMarkers({
         outOfViewportSinceMs: markerEntry.outOfViewportSinceMs,
       });
       attachRouteMarkerListeners(nextMarker, courseId);
+      syncRouteMarkerDomVisualState(nextMarker, state);
       routeMarkerClusterGenerationRef.current += 1;
       syncRouteMarkersDisplayForZoom(map);
     },
@@ -582,6 +588,7 @@ export function useRouteMarkers({
         if (stateChanged || categoryChanged) {
           existing.visualState = state;
           existing.marker.setIcon?.(getRunningCourseMarkerIconUrlForCategory(category, state));
+          syncRouteMarkerDomVisualState(existing.marker, state);
         }
       });
 
@@ -612,6 +619,7 @@ export function useRouteMarkers({
             outOfViewportSinceMs: null,
           });
           attachRouteMarkerListeners(marker, route.id);
+          syncRouteMarkerDomVisualState(marker, state);
         });
       }
 

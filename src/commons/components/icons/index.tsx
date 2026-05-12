@@ -1,6 +1,7 @@
 // 디자인: Figma node 164:16090 (icon 프레임 심볼 → lucide-react)
 import {
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   CircleAlert,
@@ -32,6 +33,7 @@ import {
 import styles from './styles.module.css';
 
 const iconRegistry = {
+  chevronDown: ChevronDown,
   chevronLeft: ChevronLeft,
   chevronRight: ChevronRight,
   circleMinus: CircleMinus,

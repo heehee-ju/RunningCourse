@@ -94,7 +94,7 @@
   width: 40px;
   height: 40px;
   border-radius: 9999px;
-  background: var(--color-black-700);
+  background: var(--color-black-400);
 }
 
 .userName {
@@ -342,7 +342,7 @@
   justify-content: center;
   gap: 8px;
   width: 100%;
-  aspect-ratio: 5 / 3;
+  aspect-ratio: 3 / 1;
   padding: 16px;
   border: 1px solid var(--color-grey-100);
   border-radius: 16px;
@@ -373,7 +373,7 @@
 
 .emptyImageTitle {
   margin: 0;
-  color: var(--color-black-900);
+  color: var(--color-black-200);
   font-family: var(--typography-body-2-ko-desktop-semibold-font-family);
   font-size: var(--typography-body-2-ko-desktop-semibold-font-size);
   font-style: var(--typography-body-2-ko-desktop-semibold-font-style);

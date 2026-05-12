@@ -232,6 +232,13 @@
   --typography-heading-3-ko-mobile-regular-font-weight: 400;
   --typography-heading-3-ko-mobile-regular-letter-spacing: 0px;
 
+  --typography-title-sm-ko-mobile-semibold-font-family: 'Pretendard', Arial, Helvetica, sans-serif;
+  --typography-title-sm-ko-mobile-semibold-font-size: 16px;
+  --typography-title-sm-ko-mobile-semibold-font-style: normal;
+  --typography-title-sm-ko-mobile-semibold-font-weight: 600;
+  --typography-title-sm-ko-mobile-semibold-letter-spacing: 0px;
+  --typography-title-sm-ko-mobile-semibold-line-height: 22px;
+
   --typography-modal-title-ko-mobile-font-family: 'Pretendard', Arial, Helvetica, sans-serif;
   --typography-modal-title-ko-mobile-font-size: 1.125rem;
   --typography-modal-title-ko-mobile-line-height: 1.6875rem;

@@ -1,19 +1,21 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
 
 import { Card } from '@/commons/components/card';
 import type { CourseCardView } from '@/commons/types/runroute';
 
+import { CourseListSortDropdown } from './course-list-sort-dropdown';
+import { CoursesListSkeleton } from './courses-list-skeleton';
+import { useCourseCardKeyboardSelect } from './hooks/use-course-card-keyboard-select';
+import { useCourseListSort } from './hooks/use-course-list-sort';
 import {
   useCoursesListBottomSheet,
   type SheetPositionPayload,
 } from './hooks/use-courses-list-bottom-sheet';
+import { useCoursesListEmptySheetState } from './hooks/use-courses-list-empty-sheet-state';
 import styles from './styles.module.css';
-import { SKELETON_CARD_COUNT } from './utils/bottom-sheet';
-
-import type { KeyboardEvent } from 'react';
+import { buildCoursesListSheetRootClassName } from './utils/sheet-root-class-name';
 
 type CoursesListProps = {
   cards?: CourseCardView[];
@@ -37,23 +39,14 @@ export function CoursesList({
   onSheetPositionChange,
   onCourseSelect,
 }: CoursesListProps) {
-  /** 한 번 빈 목록이 확정되면 코스가 생길 때까지 재로딩 중에도 접힌 상태 유지 */
-  const [holdEmptySheetCollapsed, setHoldEmptySheetCollapsed] = useState(false);
+  const { sortMode, displayCards, selectSortMode } = useCourseListSort(cards, getCourseLikeCount);
 
-  useEffect(() => {
-    if (cards.length > 0) {
-      setHoldEmptySheetCollapsed(false);
-      return;
-    }
-    if (!isRouteQueryViewportReady) {
-      return;
-    }
-    if (!isLoading && cards.length === 0) {
-      setHoldEmptySheetCollapsed(true);
-    }
-  }, [isLoading, cards.length, isRouteQueryViewportReady]);
+  const { isEmpty } = useCoursesListEmptySheetState({
+    listLength: displayCards.length,
+    isLoading,
+    isRouteQueryViewportReady,
+  });
 
-  const isEmpty = cards.length === 0 && holdEmptySheetCollapsed;
   const {
     sheetRef,
     cardListRef,
@@ -70,26 +63,18 @@ export function CoursesList({
     onSheetPositionChange,
   });
 
-  const sheetStateClassName =
-    sheetState === 'collapsed'
-      ? styles.collapsed
-      : sheetState === 'peek'
-        ? styles.peek
-        : styles.expanded;
+  const sheetRootClassName = buildCoursesListSheetRootClassName(sheetState, isDragging, {
+    courseList: styles.courseList,
+    collapsed: styles.collapsed,
+    peek: styles.peek,
+    expanded: styles.expanded,
+    dragging: styles.dragging,
+  });
 
-  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>, courseId: string) => {
-    if (event.target !== event.currentTarget) return;
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      onCourseSelect?.(courseId);
-    }
-  };
+  const handleCardKeyDown = useCourseCardKeyboardSelect(onCourseSelect);
 
   return (
-    <div
-      ref={sheetRef}
-      className={`${styles.courseList} ${sheetStateClassName} ${isDragging ? styles.dragging : ''}`}
-    >
+    <div ref={sheetRef} className={sheetRootClassName}>
       <motion.div
         className={styles.bottomSheetHandleArea}
         role="button"
@@ -103,23 +88,13 @@ export function CoursesList({
       >
         <div className={styles.bottomSheetHandle} />
       </motion.div>
-      <h2 className={styles.courseListTitle}>러닝코스 목록</h2>
+      <div className={styles.courseListTitleRow}>
+        <h2 className={styles.courseListTitle}>러닝코스 목록</h2>
+        <CourseListSortDropdown sortMode={sortMode} onSelect={selectSortMode} />
+      </div>
       <div ref={cardListRef} className={styles.cardList}>
-        {isLoading && cards.length === 0 ? (
-          <div className={styles.listLoadingBlock} aria-busy>
-            {Array.from({ length: SKELETON_CARD_COUNT }).map((_, index) => (
-              <div key={`skeleton-${index}`} className={styles.loadingCardSkeleton}>
-                <div className={styles.loadingThumbnailSkeleton} />
-                <div className={styles.loadingContentSkeleton}>
-                  <div className={styles.loadingLineLg} />
-                  <div className={styles.loadingLineMd} />
-                  <div className={styles.loadingLineSm} />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : null}
-        {cards.map((card) => (
+        {isLoading && cards.length === 0 ? <CoursesListSkeleton /> : null}
+        {displayCards.map((card) => (
           <div
             key={card.courseId}
             role="button"
@@ -150,3 +125,4 @@ export function CoursesList({
 export default CoursesList;
 
 export type { SheetPositionPayload };
+export type { CourseListSortMode } from './utils/sort-course-cards';

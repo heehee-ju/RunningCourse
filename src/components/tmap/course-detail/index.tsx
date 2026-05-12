@@ -25,12 +25,18 @@ import styles from './styles.module.css';
 
 const LOG = '[TmapCourseDetail]';
 
-/** 홈 지도(TmapHome)와 동일한 줌 범위 */
+/** 최소 줌 11 · 최대 15(홈에서 선택 코스 폴리라인 맞출 때와 동일 상한) */
 const MIN_ZOOM_LEVEL = 11;
-const MAX_ZOOM_LEVEL = 19;
+const MAX_ZOOM_LEVEL = 15;
 
 /** fitBounds 경계 여백(px). 값이 클수록 더 넓게(줌 아웃) 보임 */
-const FIT_BOUNDS_PADDING_PX = 144;
+const FIT_BOUNDS_PADDING_PX = 48;
+
+/**
+ * 보행자/저장 path 바운딩이 웨이포인트 대비 비정상적으로 클 때(파싱 오염 등),
+ * 미리보기 프레이밍은 저장 지점 기준으로 맞춘다. 폴리라인은 그대로 그린다.
+ */
+const FRAMING_USE_SAVED_WAYPOINTS_SPAN_RATIO = 3;
 
 type TmapCourseDetailProps = {
   course: Route;
@@ -78,6 +84,15 @@ function clampZoomLevel(map: CourseDetailMapInstance): void {
 }
 
 const ZOOM_CLAMP_EVENT_NAMES = ['zoom_end', 'zoomend', 'idle'] as const;
+
+function maxAxisAlignedSpan(
+  minLat: number,
+  maxLat: number,
+  minLng: number,
+  maxLng: number,
+): number {
+  return Math.max(maxLat - minLat, maxLng - minLng);
+}
 
 function registerZoomClampListeners(map: CourseDetailMapInstance): () => void {
   const callback = () => {
@@ -266,7 +281,7 @@ export function TmapCourseDetail({ course, mapLabel }: TmapCourseDetailProps) {
       waypointMarkerModels.forEach((model) => {
         const markerOptions: Record<string, unknown> = {
           position: new Tmapv3.LatLng(model.lat, model.lng),
-          icon: getWaypointMarkerIconUrl(model.role),
+          icon: getWaypointMarkerIconUrl(model.role, model.viaOrder),
           map: mapInstance,
         };
 
@@ -292,10 +307,28 @@ export function TmapCourseDetail({ course, mapLabel }: TmapCourseDetailProps) {
       if (typeof mapInstance.fitBounds === 'function') {
         const latValues = lineCoordinates.map((coordinate) => coordinate.lat);
         const lngValues = lineCoordinates.map((coordinate) => coordinate.lng);
-        const minLat = Math.min(...latValues);
-        const maxLat = Math.max(...latValues);
-        const minLng = Math.min(...lngValues);
-        const maxLng = Math.max(...lngValues);
+        let minLat = Math.min(...latValues);
+        let maxLat = Math.max(...latValues);
+        let minLng = Math.min(...lngValues);
+        let maxLng = Math.max(...lngValues);
+        const lineSpan = maxAxisAlignedSpan(minLat, maxLat, minLng, maxLng);
+
+        if (savedRoutePoints.length >= 2) {
+          const sLat = savedRoutePoints.map((p) => p.lat);
+          const sLng = savedRoutePoints.map((p) => p.lng);
+          const sminLat = Math.min(...sLat);
+          const smaxLat = Math.max(...sLat);
+          const sminLng = Math.min(...sLng);
+          const smaxLng = Math.max(...sLng);
+          const savedSpan = maxAxisAlignedSpan(sminLat, smaxLat, sminLng, smaxLng);
+          if (savedSpan > 1e-6 && lineSpan > savedSpan * FRAMING_USE_SAVED_WAYPOINTS_SPAN_RATIO) {
+            minLat = sminLat;
+            maxLat = smaxLat;
+            minLng = sminLng;
+            maxLng = smaxLng;
+          }
+        }
+
         const southWest = new Tmapv3.LatLng(minLat, minLng);
         const northEast = new Tmapv3.LatLng(maxLat, maxLng);
 
@@ -318,7 +351,14 @@ export function TmapCourseDetail({ course, mapLabel }: TmapCourseDetailProps) {
       polylineRef.current = null;
       clearWaypointMarkers();
     };
-  }, [mapReady, course.start_lat, course.start_lng, lineCoordinates, waypointMarkerModels]);
+  }, [
+    mapReady,
+    course.start_lat,
+    course.start_lng,
+    lineCoordinates,
+    savedRoutePoints,
+    waypointMarkerModels,
+  ]);
 
   return (
     <div className={styles.root}>

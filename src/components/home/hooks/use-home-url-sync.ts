@@ -1,10 +1,17 @@
 'use client';
 
+// 홈 URL 쿼리·sessionStorage와 선택 상태 동기화, 상세 진입 전 히스토리 스냅샷을 담당한다.
+
 import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
 
 import type { RouteViewport } from '@/commons/types/runroute';
 
 import { HOME_QUERY_KEYS, HOME_SESSION_KEYS, TAB_ITEMS } from '../utils/home-constants';
+import {
+  areDistanceCategorySetsEqual,
+  parseDistanceCategoriesFromQuery,
+  resolveHomeSearchParamsForRead,
+} from '../utils/home-url-sync-helpers';
 import { isValidRouteViewport } from '../utils/viewport';
 
 import type { DistanceCategory } from '../utils/course-filter';
@@ -29,7 +36,7 @@ type UseHomeUrlSyncParams = {
   frozenVisibleRouteViewport: RouteViewport | null;
 };
 
-/** 쿼리·세션 복원, URL 동기화, 상세 진입 전 히스토리 스냅샷 */
+/** 쿼리·세션 복원, URL 동기화, 상세 진입 전 히스토리 스냅샷 (순수 로직은 `home-url-sync-helpers`) */
 export function useHomeUrlSync({
   searchParams,
   pathname,
@@ -48,59 +55,73 @@ export function useHomeUrlSync({
   effectiveQueryViewport,
   frozenVisibleRouteViewport,
 }: UseHomeUrlSyncParams) {
-  const hasRestoredFromQueryRef = useRef(false);
   const lastSyncedQueryRef = useRef('');
+  /** URL에서 홈 UI 상태를 한 번 이상 읽은 뒤에만 state→URL replace를 허용 (초기 레이스 완화) */
+  const allowStateToUrlSyncRef = useRef(false);
+  /** `restoreViewportOnce` 세션을 이미 처리했는지 (뷰포트 JSON은 1회만 적용) */
+  const didApplyViewportFromSessionRef = useRef(false);
 
+  /**
+   * URL(Next + window 보강)과 세션 플래그에서 홈 상태를 복구한다.
+   * - 예전 `hasRestoredFromQueryRef` 한 방에 막아 두면 searchParams가 늦게 채워질 때 영구히 놓친다.
+   * - 코스 id는 쿼리에 있을 때만 반영하고, 쿼리에서 사라졌다고 로컬 선택을 지우지는 않는다.
+   *   (마커 선택 직후 아직 router.replace 전 한 틱과의 충돌 방지)
+   */
   useEffect(() => {
-    if (hasRestoredFromQueryRef.current) return;
-    const selectedCourseFromQuery = searchParams?.get(HOME_QUERY_KEYS.selectedCourseId) ?? null;
-    const categoriesFromQuery = searchParams?.get(HOME_QUERY_KEYS.categories) ?? null;
-    const sheetFromQuery = searchParams?.get(HOME_QUERY_KEYS.sheet) ?? null;
-    if (selectedCourseFromQuery) {
-      setSelectedCourseId(selectedCourseFromQuery);
-    }
-    if (categoriesFromQuery) {
-      const categorySet = new Set<DistanceCategory>();
-      categoriesFromQuery.split(',').forEach((category) => {
-        if (TAB_ITEMS.some((item) => item.category === category)) {
-          categorySet.add(category as DistanceCategory);
-        }
-      });
-      setSelectedCategories(categorySet);
-    }
-    if (sheetFromQuery === 'expanded') {
-      setIsSheetExpanded(true);
-    }
-    const shouldRestoreViewport = typeof window !== 'undefined';
+    if (typeof window === 'undefined') return;
 
-    if (shouldRestoreViewport) {
-      const shouldRestoreOnce =
-        window.sessionStorage.getItem(HOME_SESSION_KEYS.restoreViewportOnce) === '1';
-      const shouldRestoreSelectedFocusOnce =
-        window.sessionStorage.getItem(HOME_SESSION_KEYS.restoreSelectedFocusOnce) === '1';
-      if (shouldRestoreOnce) {
-        const rawViewport = window.sessionStorage.getItem(HOME_SESSION_KEYS.savedViewport);
-        if (rawViewport) {
-          try {
-            const parsed = JSON.parse(rawViewport) as RouteViewport;
-            if (isValidRouteViewport(parsed)) {
-              setVisibleRouteViewport(parsed);
-              setFrozenVisibleRouteViewport(parsed);
-              setRestoredInitialViewport(parsed);
-            }
-          } catch {
-            // 손상된 저장값은 무시
+    const merged = resolveHomeSearchParamsForRead(pathname, searchParams);
+    const rawCourseId = merged.get(HOME_QUERY_KEYS.selectedCourseId);
+    const courseIdFromUrl = rawCourseId?.trim() ? rawCourseId.trim() : null;
+
+    if (courseIdFromUrl) {
+      setSelectedCourseId((previous) =>
+        previous === courseIdFromUrl ? previous : courseIdFromUrl,
+      );
+    }
+
+    const categoriesRaw = merged.get(HOME_QUERY_KEYS.categories);
+    if (categoriesRaw) {
+      const parsed = parseDistanceCategoriesFromQuery(categoriesRaw);
+      setSelectedCategories((previous) =>
+        areDistanceCategorySetsEqual(previous, parsed) ? previous : parsed,
+      );
+    }
+
+    if (merged.get(HOME_QUERY_KEYS.sheet) === 'expanded') {
+      setIsSheetExpanded((previous) => (previous ? previous : true));
+    }
+
+    const shouldRestoreViewportOnce =
+      window.sessionStorage.getItem(HOME_SESSION_KEYS.restoreViewportOnce) === '1';
+    if (shouldRestoreViewportOnce && !didApplyViewportFromSessionRef.current) {
+      didApplyViewportFromSessionRef.current = true;
+      const rawViewport = window.sessionStorage.getItem(HOME_SESSION_KEYS.savedViewport);
+      if (rawViewport) {
+        try {
+          const parsed = JSON.parse(rawViewport) as RouteViewport;
+          if (isValidRouteViewport(parsed)) {
+            setVisibleRouteViewport(parsed);
+            setFrozenVisibleRouteViewport(parsed);
+            setRestoredInitialViewport(parsed);
           }
+        } catch {
+          // 손상된 저장값은 무시
         }
-      }
-      if (selectedCourseFromQuery && shouldRestoreSelectedFocusOnce) {
-        setMarkerClickRecenterToken((prev) => prev + 1);
       }
       window.sessionStorage.removeItem(HOME_SESSION_KEYS.restoreViewportOnce);
+    }
+
+    const shouldRestoreSelectedFocusOnce =
+      window.sessionStorage.getItem(HOME_SESSION_KEYS.restoreSelectedFocusOnce) === '1';
+    if (shouldRestoreSelectedFocusOnce && courseIdFromUrl) {
+      setMarkerClickRecenterToken((previous) => previous + 1);
       window.sessionStorage.removeItem(HOME_SESSION_KEYS.restoreSelectedFocusOnce);
     }
-    hasRestoredFromQueryRef.current = true;
+
+    allowStateToUrlSyncRef.current = true;
   }, [
+    pathname,
     searchParams,
     setFrozenVisibleRouteViewport,
     setIsSheetExpanded,
@@ -111,8 +132,9 @@ export function useHomeUrlSync({
     setVisibleRouteViewport,
   ]);
 
+  /** 로컬 상태를 쿼리스트링에 맞춘다. (URL이 이미 같으면 replace 생략) */
   useEffect(() => {
-    if (!hasRestoredFromQueryRef.current) return;
+    if (!allowStateToUrlSyncRef.current) return;
 
     const params = new URLSearchParams();
     if (selectedCourseId) {
@@ -180,7 +202,11 @@ export function useHomeUrlSync({
       const nextQuery = params.toString();
       const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
       const currentUrl = `${window.location.pathname}${window.location.search}`;
-      if (currentUrl === nextUrl) return;
+      if (currentUrl === nextUrl) {
+        // URL은 이미 동기화된 상태여도, 상세 복귀 시 포커스/뷰포트 복원을 위해 세션은 반드시 갱신한다.
+        lastSyncedQueryRef.current = nextQuery;
+        return;
+      }
 
       window.history.replaceState(window.history.state, '', nextUrl);
       lastSyncedQueryRef.current = nextQuery;

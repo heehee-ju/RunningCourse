@@ -17,6 +17,8 @@ export type WaypointMarkerModel = {
   lng: number;
   role: WaypointMarkerRole;
   label: string;
+  /** `role === 'via'` 일 때 출발 다음부터의 경유 순번(1-based), 아이콘은 최대 5까지 대응 */
+  viaOrder?: number;
 };
 
 function toWgs84FromEpsg3857(x: number, y: number): LatLng {
@@ -281,7 +283,8 @@ export function buildWaypointMarkerModels(
       const isEnd = index === arr.length - 1;
       const role: WaypointMarkerRole = isStart ? 'start' : isEnd ? 'end' : 'via';
       const label = isStart ? 'S' : isEnd ? 'E' : String(index);
-      return { lat: coord.lat, lng: coord.lng, role, label };
+      const viaOrder = role === 'via' ? index : undefined;
+      return { lat: coord.lat, lng: coord.lng, role, label, viaOrder };
     });
   }
 

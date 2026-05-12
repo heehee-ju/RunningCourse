@@ -45,7 +45,8 @@ export function getRouteMarkerAnchorForDisplay(): { x: number; y: number } {
 
 /**
  * 거리 카테고리별 마커 PNG.
- * `visualState` 는 기존 호출부 호환용(아이콘은 동일 파일).
+ * `visualState` 는 호출부 시그니처 호환용이며, 파일 경로는 카테고리만으로 결정된다.
+ * 클릭·호버 구분은 `syncRouteMarkerDomVisualState` + CSS(`data-route-marker-visual`)로 처리한다.
  */
 export function getRunningCourseMarkerIconUrlForCategory(
   category: DistanceCategory,

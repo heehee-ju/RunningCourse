@@ -15,6 +15,31 @@
   cursor: default !important;
 }
 
+/* 카테고리별 마커 PNG는 동일 파일을 쓰므로, data-route-marker-visual 로 선택·호버를 구분한다 */
+.root :global([data-route-marker-visual='default'] img) {
+  filter: none;
+  transform: none;
+  transition:
+    filter 160ms ease,
+    transform 160ms ease;
+}
+
+.root :global([data-route-marker-visual='hover'] img) {
+  filter: brightness(1.08);
+  transform: scale(1.08);
+  transition:
+    filter 160ms ease,
+    transform 160ms ease;
+}
+
+.root :global([data-route-marker-visual='clicked'] img) {
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--color-black-500) 42%, transparent));
+  transform: scale(1.12);
+  transition:
+    filter 160ms ease,
+    transform 160ms ease;
+}
+
 /** * [추가] 현재 위치 재검색 버튼 스타일 */
 .refreshButton {
   /* 바텀시트 핸들 상단에 위치하도록 동적 보정 */

@@ -7,8 +7,8 @@ export const LOGO_SIZE_PRESETS = {
     height: 38,
   },
   header: {
-    width: 36,
-    height: 28,
+    width: 28,
+    height: 22,
   },
   cardThumbnail: {
     width: 48,

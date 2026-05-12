@@ -1,3 +1,5 @@
+// CourseCardView를 공통 Card 래퍼로 넘기는 코스 목록용 카드
+
 import { Card } from '@/commons/components/card';
 import type { CourseCardView } from '@/commons/types/runroute';
 

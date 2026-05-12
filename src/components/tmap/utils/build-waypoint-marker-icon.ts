@@ -10,15 +10,24 @@ function markerTitleByRole(role: WaypointMarkerRole): string {
   return '경유지';
 }
 
-/** `public/icons` 에셋 경로 */
-const ROLE_TO_ICON_PATH: Record<WaypointMarkerRole, string> = {
+/** 경유지 순번별 깃발 (`flag_point=1` … `flag_point=5`); 6번째 이상은 5번 아이콘으로 표시 */
+export const WAYPOINT_VIA_ICON_MAX_ORDER = 5;
+
+const START_END_ICON: Record<Exclude<WaypointMarkerRole, 'via'>, string> = {
   start: '/icons/flag_start.png',
-  via: '/icons/flag_point.png',
   end: '/icons/flag_finish.png',
 };
 
-export function getWaypointMarkerIconUrl(role: WaypointMarkerRole): string {
-  return ROLE_TO_ICON_PATH[role];
+/**
+ * @param viaOrder 경유지일 때만 사용. 출발지 인덱스 0 기준으로 첫 경유지는 `1`(=`points` 배열 인덱스).
+ */
+export function getWaypointMarkerIconUrl(role: WaypointMarkerRole, viaOrder?: number): string {
+  if (role === 'via') {
+    const raw = viaOrder ?? 1;
+    const n = Math.min(Math.max(Math.trunc(raw), 1), WAYPOINT_VIA_ICON_MAX_ORDER);
+    return `/icons/flag_point=${String(n)}.png`;
+  }
+  return START_END_ICON[role];
 }
 
 export function getWaypointMarkerTitle(role: WaypointMarkerRole): string {
