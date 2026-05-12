@@ -8,6 +8,8 @@ import type { Metadata, Viewport } from 'next';
 
 import './globals.css';
 
+export const dynamic = 'force-dynamic';
+
 // 아이콘 에셋은 public/logo/ 에서 중앙 관리하며 metadata.icons로 명시한다.
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
