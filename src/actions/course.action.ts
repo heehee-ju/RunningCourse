@@ -158,7 +158,7 @@ export async function createCourseAction(
   }
 
   revalidatePath('/');
-  redirect('/');
+  redirect(`/courses/${data.id}`);
 }
 
 export async function deleteCourseAction(routeId: string): Promise<DeleteCourseActionResult> {
