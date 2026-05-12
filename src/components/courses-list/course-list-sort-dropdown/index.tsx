@@ -81,7 +81,7 @@ export function CourseListSortDropdown({ sortMode, onSelect }: CourseListSortDro
         <span
           className={`${styles.sortDropdownChevron} ${open ? styles.sortDropdownChevronOpen : ''}`}
         >
-          <Icon name="chevronDown" size={14} strokeWidth={2} />
+          ▾
         </span>
       </button>
       {open ? (
@@ -97,14 +97,12 @@ export function CourseListSortDropdown({ sortMode, onSelect }: CourseListSortDro
                   handleSelect(option.value);
                 }}
               >
+                <span className={styles.sortDropdownOptionLabel}>{option.label}</span>
                 {sortMode === option.value ? (
                   <span className={styles.sortDropdownCheck} aria-hidden>
-                    <Icon name="check" size={14} strokeWidth={1.5} />
+                    <Icon name="check" size={14} strokeWidth={2} />
                   </span>
-                ) : (
-                  <span className={styles.sortDropdownCheckSpacer} aria-hidden />
-                )}
-                <span className={styles.sortDropdownOptionLabel}>{option.label}</span>
+                ) : null}
               </button>
             </li>
           ))}
