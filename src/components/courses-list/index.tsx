@@ -1,15 +1,17 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
 
 import { Card } from '@/commons/components/card';
 import type { CourseCardView } from '@/commons/types/runroute';
 
+import { CourseListSortDropdown } from './course-list-sort-dropdown';
+import { useCourseListSort } from './hooks/use-course-list-sort';
 import {
   useCoursesListBottomSheet,
   type SheetPositionPayload,
 } from './hooks/use-courses-list-bottom-sheet';
+import { useCoursesListEmptySheetState } from './hooks/use-courses-list-empty-sheet-state';
 import styles from './styles.module.css';
 import { SKELETON_CARD_COUNT } from './utils/bottom-sheet';
 
@@ -37,23 +39,14 @@ export function CoursesList({
   onSheetPositionChange,
   onCourseSelect,
 }: CoursesListProps) {
-  /** 한 번 빈 목록이 확정되면 코스가 생길 때까지 재로딩 중에도 접힌 상태 유지 */
-  const [holdEmptySheetCollapsed, setHoldEmptySheetCollapsed] = useState(false);
+  const { sortMode, displayCards, selectSortMode } = useCourseListSort(cards, getCourseLikeCount);
 
-  useEffect(() => {
-    if (cards.length > 0) {
-      setHoldEmptySheetCollapsed(false);
-      return;
-    }
-    if (!isRouteQueryViewportReady) {
-      return;
-    }
-    if (!isLoading && cards.length === 0) {
-      setHoldEmptySheetCollapsed(true);
-    }
-  }, [isLoading, cards.length, isRouteQueryViewportReady]);
+  const { isEmpty } = useCoursesListEmptySheetState({
+    listLength: displayCards.length,
+    isLoading,
+    isRouteQueryViewportReady,
+  });
 
-  const isEmpty = cards.length === 0 && holdEmptySheetCollapsed;
   const {
     sheetRef,
     cardListRef,
@@ -103,7 +96,10 @@ export function CoursesList({
       >
         <div className={styles.bottomSheetHandle} />
       </motion.div>
-      <h2 className={styles.courseListTitle}>러닝코스 목록</h2>
+      <div className={styles.courseListTitleRow}>
+        <h2 className={styles.courseListTitle}>러닝코스 목록</h2>
+        <CourseListSortDropdown sortMode={sortMode} onSelect={selectSortMode} />
+      </div>
       <div ref={cardListRef} className={styles.cardList}>
         {isLoading && cards.length === 0 ? (
           <div className={styles.listLoadingBlock} aria-busy>
@@ -119,7 +115,7 @@ export function CoursesList({
             ))}
           </div>
         ) : null}
-        {cards.map((card) => (
+        {displayCards.map((card) => (
           <div
             key={card.courseId}
             role="button"
@@ -150,3 +146,4 @@ export function CoursesList({
 export default CoursesList;
 
 export type { SheetPositionPayload };
+export type { CourseListSortMode } from './utils/sort-course-cards';

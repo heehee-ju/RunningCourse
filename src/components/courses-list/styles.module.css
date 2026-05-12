@@ -58,16 +58,162 @@
   background: var(--color-grey-200);
 }
 
-.courseListTitle {
+.courseListTitleRow {
+  position: relative;
+  z-index: 2;
+  display: flex;
   flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin: 0 0 12px;
+}
+
+.courseListTitle {
+  flex: 1;
+  min-width: 0;
+  padding-left: 6px;
+  margin: 0;
   color: var(--color-black-500);
   font-family: var(--typography-title-sm-ko-mobile-semibold-font-family);
-  font-size: var(--typography-title-sm-ko-mobile-semibold-font-size);
+  font-size: calc(var(--typography-title-sm-ko-mobile-semibold-font-size) + 2px);
   font-style: var(--typography-title-sm-ko-mobile-semibold-font-style);
   font-weight: var(--typography-title-sm-ko-mobile-semibold-font-weight);
   letter-spacing: var(--typography-title-sm-ko-mobile-semibold-letter-spacing);
-  line-height: var(--typography-title-sm-ko-mobile-semibold-line-height);
+  line-height: calc(var(--typography-title-sm-ko-mobile-semibold-line-height) + 2px);
+}
+
+.sortDropdownRoot {
+  position: relative;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.sortDropdownTrigger {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 96px;
+  height: 36px;
+  padding: 0 12px;
+  margin-right: 6px;
+  border: 1.5px solid var(--color-grey-100);
+  border-radius: 10px;
+  background-color: var(--color-white-500);
+  color: var(--color-black-400);
+  font-family: var(--typography-body-2-ko-mobile-regular-font-family);
+  font-size: calc(var(--typography-body-2-ko-mobile-regular-font-size) * 0.95);
+  font-style: normal;
+  font-weight: var(--typography-body-2-ko-mobile-regular-font-weight);
+  letter-spacing: var(--typography-body-2-ko-mobile-regular-letter-spacing);
+  line-height: calc(var(--typography-body-2-ko-mobile-regular-line-height) * 0.95);
+  cursor: pointer;
+}
+
+.sortDropdownTriggerLabel {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.sortDropdownChevron {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-black-400);
+  transition: transform 200ms ease;
+}
+
+.sortDropdownChevronOpen {
+  transform: rotate(180deg);
+}
+
+.sortDropdownTrigger:focus-visible {
+  outline: 2px solid var(--color-black-500);
+  outline-offset: 2px;
+}
+
+.sortDropdownList {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 10;
+  min-width: fit-content;
+  margin: 6px 6px 0 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--color-grey-100);
+  border-radius: 12px;
+  background-color: var(--color-grey-50);
+  box-shadow: 0 4px 8px color-mix(in srgb, var(--color-black-300) 8%, transparent);
+  overscroll-behavior: none;
+}
+
+.sortDropdownOptionWrap {
+  margin: 0;
+}
+
+.sortDropdownOption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-black-300);
+  font-family: var(--typography-body-2-ko-mobile-regular-font-family);
+  font-size: calc(var(--typography-body-2-ko-mobile-regular-font-size) * 0.9);
+  font-style: normal;
+  font-weight: var(--typography-body-2-ko-mobile-regular-font-weight);
+  letter-spacing: var(--typography-body-2-ko-mobile-regular-letter-spacing);
+  line-height: calc(var(--typography-body-2-ko-mobile-regular-line-height) * 0.9);
+  text-align: left;
+  cursor: pointer;
+}
+
+.sortDropdownOption:hover {
+  background-color: var(--color-dark_grey-50);
+}
+
+.sortDropdownOption:focus-visible {
+  outline: 2px solid var(--color-black-500);
+  outline-offset: 0;
+}
+
+.sortDropdownCheck {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  color: var(--color-black-300);
+}
+
+.sortDropdownCheck:hover {
+  color: var(--color-black-400);
+}
+
+.sortDropdownCheckSpacer {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+}
+
+.sortDropdownOptionLabel {
+  flex: 1;
+  min-width: fit-content;
+}
+
+.sortDropdownOptionLabel:hover {
+  color: var(--color-black-400);
 }
 
 .cardList {
@@ -150,4 +296,3 @@
   height: 18px;
   margin-top: auto;
 }
-
