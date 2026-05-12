@@ -281,7 +281,7 @@ export function TmapCourseDetail({ course, mapLabel }: TmapCourseDetailProps) {
       waypointMarkerModels.forEach((model) => {
         const markerOptions: Record<string, unknown> = {
           position: new Tmapv3.LatLng(model.lat, model.lng),
-          icon: getWaypointMarkerIconUrl(model.role),
+          icon: getWaypointMarkerIconUrl(model.role, model.viaOrder),
           map: mapInstance,
         };
 
