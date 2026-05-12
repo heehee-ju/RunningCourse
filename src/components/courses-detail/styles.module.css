@@ -201,6 +201,16 @@
   letter-spacing: var(--typography-body-2-ko-desktop-regular-letter-spacing);
 }
 
+.roundTripBadge {
+  color: var(--color-grey-500);
+  font-family: var(--typography-body-2-ko-desktop-regular-font-family);
+  font-size: var(--typography-body-2-ko-desktop-regular-font-size);
+  font-style: var(--typography-body-2-ko-desktop-regular-font-style);
+  font-weight: var(--typography-body-2-ko-desktop-regular-font-weight);
+  line-height: var(--typography-body-2-ko-desktop-regular-line-height);
+  letter-spacing: var(--typography-body-2-ko-desktop-regular-letter-spacing);
+}
+
 .likeButton {
   display: flex;
   flex-direction: column;

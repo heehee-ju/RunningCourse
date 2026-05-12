@@ -18,11 +18,12 @@ type RouteRow = {
   start_address_region: string | null;
   image_urls: string[] | null;
   likes_count: number | null;
+  is_round_trip: boolean | null;
   created_at: string | null;
 };
 
 const ROUTE_SELECT =
-  'id, user_id, title, description, distance_meters, path_data, start_lat, start_lng, start_address_region, image_urls, likes_count, created_at';
+  'id, user_id, title, description, distance_meters, path_data, start_lat, start_lng, start_address_region, image_urls, likes_count, is_round_trip, created_at';
 
 function toRoute(row: RouteRow): Route | null {
   if (
@@ -49,6 +50,7 @@ function toRoute(row: RouteRow): Route | null {
     start_address_region: row.start_address_region,
     image_urls: row.image_urls ?? [],
     likes_count: row.likes_count ?? 0,
+    is_round_trip: row.is_round_trip ?? false,
     created_at: row.created_at,
   };
 }
@@ -68,6 +70,7 @@ export interface InsertRouteParams {
   start_lng: number;
   start_address_region?: string | null;
   image_urls: string[];
+  is_round_trip: boolean;
 }
 
 /**

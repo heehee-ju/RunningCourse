@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useModal } from '@/commons/providers/modal/modal.provider';
 import type { TmapCoordinate, TmapLatLngLike, TmapMapLike } from '@/commons/types/tmap';
@@ -12,6 +12,7 @@ import { useTmapOverlays } from './useTmapOverlays';
 
 export type SaveRoutePayload = {
   totalDistanceKm: number;
+  isRoundTrip: boolean;
   pathData: {
     points: TmapCoordinate[];
     path: TmapCoordinate[];
@@ -25,11 +26,14 @@ type UseCourseMapParams = {
 
 export function useCourseMap({ onSaveRoute }: UseCourseMapParams = {}) {
   const [points, setPoints] = useState<TmapCoordinate[]>([]);
-  const [distanceKm, setDistanceKm] = useState<number | null>(null);
+  const [rawDistanceKm, setRawDistanceKm] = useState<number | null>(null);
+  const [isRoundTrip, setIsRoundTrip] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { openModal } = useModal();
 
+  const rawDistanceKmRef = useRef<number | null>(null);
+  const lastRouteRef = useRef<Pick<SaveRoutePayload, 'pathData' | 'startPoint'> | null>(null);
   const mapRef = useRef<TmapMapLike | null>(null);
 
   const setMapInstance = useCallback((map: TmapMapLike) => {
@@ -69,7 +73,9 @@ export function useCourseMap({ onSaveRoute }: UseCourseMapParams = {}) {
       drawPointMarkers(nextPoints);
       return nextPoints;
     });
-    setDistanceKm(null);
+    setRawDistanceKm(null);
+    rawDistanceKmRef.current = null;
+    lastRouteRef.current = null;
     clearPolyline();
   }, [clearPolyline, drawPointMarkers]);
 
@@ -100,23 +106,34 @@ export function useCourseMap({ onSaveRoute }: UseCourseMapParams = {}) {
 
       drawRoutePolyline(detailedPath);
 
-      const totalDistanceKm = Number((pedestrianRoute.totalDistanceMeters / 1000).toFixed(2));
-      setDistanceKm(totalDistanceKm);
+      const rawKm = Number((pedestrianRoute.totalDistanceMeters / 1000).toFixed(2));
+      const routePayload: Pick<SaveRoutePayload, 'pathData' | 'startPoint'> = {
+        pathData: { points, path: detailedPath },
+        startPoint: points[0],
+      };
+      rawDistanceKmRef.current = rawKm;
+      lastRouteRef.current = routePayload;
+      setRawDistanceKm(rawKm);
 
       onSaveRoute?.({
-        totalDistanceKm,
-        pathData: {
-          points,
-          path: detailedPath,
-        },
-        startPoint: points[0],
+        totalDistanceKm: Number((rawKm * (isRoundTrip ? 2 : 1)).toFixed(2)),
+        isRoundTrip,
+        ...routePayload,
       });
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '경로 저장 중 오류가 발생했습니다.');
     } finally {
       setIsSaving(false);
     }
-  }, [drawRoutePolyline, onSaveRoute, points]);
+  }, [drawRoutePolyline, isRoundTrip, onSaveRoute, points]);
+
+  useEffect(() => {
+    if (!lastRouteRef.current || rawDistanceKmRef.current === null) return;
+    const adjusted = Number((rawDistanceKmRef.current * (isRoundTrip ? 2 : 1)).toFixed(2));
+    onSaveRoute?.({ totalDistanceKm: adjusted, isRoundTrip, ...lastRouteRef.current });
+    // rawDistanceKmRef and lastRouteRef are refs — they don't need to be listed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRoundTrip]);
 
   const saveRoute = useCallback(() => {
     openModal({
@@ -131,10 +148,14 @@ export function useCourseMap({ onSaveRoute }: UseCourseMapParams = {}) {
 
   const isPointLimitReached = points.length >= MAX_POINT_LENGTH;
   const waypointCount = useMemo(() => Math.max(0, points.length - 2), [points.length]);
+  const displayDistanceKm =
+    rawDistanceKm !== null ? Number((rawDistanceKm * (isRoundTrip ? 2 : 1)).toFixed(2)) : null;
 
   return {
     points,
-    distanceKm,
+    displayDistanceKm,
+    isRoundTrip,
+    setIsRoundTrip,
     isSaving,
     errorMessage,
     isPointLimitReached,

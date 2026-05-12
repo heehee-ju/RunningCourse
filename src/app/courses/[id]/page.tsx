@@ -4,8 +4,32 @@ import CoursesWireframe from '@/components/courses-detail';
 import { createClient } from '@/lib/supabase/server';
 import { fetchCourseDetail } from '@/services/course/courseDetailService';
 
+import type { Metadata } from 'next';
+
 interface CourseDetailPageProps {
   params: { id: string };
+}
+
+export async function generateMetadata({ params }: CourseDetailPageProps): Promise<Metadata> {
+  const detail = await fetchCourseDetail(params.id);
+  if (!detail) return {};
+
+  const { course, location } = detail;
+  const distanceKm = (course.distance_meters / 1000).toFixed(1);
+  const description = course.description?.trim() || `${location} 근처의 ${distanceKm}km 러닝 코스`;
+  const ogImage = course.image_urls[0] ?? '/images/rr-logo.png';
+
+  return {
+    title: `${course.title} | 루트런`,
+    description,
+    openGraph: {
+      title: course.title,
+      description,
+      locale: 'ko_KR',
+      type: 'article',
+      images: [{ url: ogImage, alt: course.title }],
+    },
+  };
 }
 
 export default async function CoursesPage({ params }: CourseDetailPageProps) {

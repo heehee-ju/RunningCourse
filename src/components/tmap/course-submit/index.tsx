@@ -24,7 +24,9 @@ export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) 
   const { createCurrentLocationMarker } = useCurrentLocationMarker();
   const {
     points,
-    distanceKm,
+    displayDistanceKm,
+    isRoundTrip,
+    setIsRoundTrip,
     isSaving,
     errorMessage,
     isPointLimitReached,
@@ -80,10 +82,20 @@ export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) 
       </div>
 
       <div className={styles.bottomPanel}>
+        <label className={styles.roundTripLabel}>
+          <input
+            type="checkbox"
+            checked={isRoundTrip}
+            onChange={(e) => setIsRoundTrip(e.target.checked)}
+            className={styles.roundTripCheckbox}
+          />
+          왕복
+        </label>
+
         <div className={styles.metaPanel}>
           <p className={styles.metaText}>
             경로 지점 {points.length}개 | 총 거리{' '}
-            {distanceKm !== null ? `${distanceKm.toFixed(2)}km` : '-'}
+            {displayDistanceKm !== null ? `${displayDistanceKm.toFixed(2)}km` : '-'}
           </p>
           {isPointLimitReached && (
             <p className={styles.warningText}>최대 7개 지점까지 선택할 수 있습니다.</p>

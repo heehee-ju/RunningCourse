@@ -92,6 +92,14 @@ export function Courses({ course, authorNickname, location, canEdit = false }: C
               <h2 className={styles.courseTitle}>{course.title}</h2>
               <div className={styles.metaRow}>
                 <span className={styles.distance}>{distanceText}</span>
+                <>
+                  <span className={styles.separator} aria-hidden>
+                    |
+                  </span>
+                  <span className={styles.roundTripBadge}>
+                    {course.is_round_trip ? '왕복코스' : '편도코스'}
+                  </span>
+                </>
                 <span className={styles.separator} aria-hidden>
                   |
                 </span>

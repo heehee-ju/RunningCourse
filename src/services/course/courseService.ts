@@ -15,6 +15,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 export type SubmitCourseRouteData = {
   /** km 단위 */
   totalDistanceKm: number;
+  isRoundTrip: boolean;
   pathData: Record<string, unknown>;
   startPoint: { lat: number; lng: number };
 };
@@ -131,6 +132,7 @@ export async function submitNewCourse(
     start_lat: input.routeData.startPoint.lat,
     start_lng: input.routeData.startPoint.lng,
     image_urls: input.imageUrls,
+    is_round_trip: Boolean(input.routeData.isRoundTrip),
   };
 
   return courseRepository.createCourse(supabase, payload);

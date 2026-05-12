@@ -18,6 +18,7 @@ export interface Route {
   start_address_region?: string | null;
   image_urls: string[];
   likes_count: number;
+  is_round_trip: boolean;
   created_at: string;
 }
 

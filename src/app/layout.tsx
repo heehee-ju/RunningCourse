@@ -8,11 +8,22 @@ import type { Metadata, Viewport } from 'next';
 
 import './globals.css';
 
+export const dynamic = 'force-dynamic';
+
 // 아이콘 에셋은 public/logo/ 에서 중앙 관리하며 metadata.icons로 명시한다.
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
   title: '루트런 | 내 주변 러닝 코스',
   description: '전국의 러닝 코스를 찾고, 나만의 경로를 기록하여 러너들과 공유해보세요.',
   applicationName: '루트런',
+  openGraph: {
+    title: '루트런 | 내 주변 러닝 코스',
+    description: '전국의 러닝 코스를 찾고, 나만의 경로를 기록하여 러너들과 공유해보세요.',
+    siteName: '루트런',
+    locale: 'ko_KR',
+    type: 'website',
+    images: [{ url: '/images/rr-logo.png', alt: '루트런 로고' }],
+  },
   icons: {
     icon: [
       { url: '/logo/favicon.ico' },

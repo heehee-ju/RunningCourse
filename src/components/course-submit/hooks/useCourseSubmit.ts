@@ -88,6 +88,7 @@ export function useCourseSubmit({ mode, courseId, initialData }: UseCourseSubmit
   const handleSaveRoute = useCallback((data: SaveRoutePayload) => {
     const normalized: RouteData = {
       totalDistanceKm: Number(data.totalDistanceKm),
+      isRoundTrip: Boolean(data.isRoundTrip),
       pathData: {
         points: data.pathData.points.map((p) => ({ lat: Number(p.lat), lng: Number(p.lng) })),
         path: data.pathData.path.map((p) => ({ lat: Number(p.lat), lng: Number(p.lng) })),
@@ -181,6 +182,7 @@ export function useCourseSubmit({ mode, courseId, initialData }: UseCourseSubmit
         description: description.trim() || null,
         routeData: {
           totalDistanceKm: routeData.totalDistanceKm,
+          isRoundTrip: routeData.isRoundTrip,
           pathData: toPathDataRecord(routeData),
           startPoint: {
             lat: routeData.startPoint.lat,

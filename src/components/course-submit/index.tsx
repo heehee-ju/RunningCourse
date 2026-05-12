@@ -53,6 +53,7 @@ const TEXTS = {
   BUTTON_NEW: '등록하기',
   BUTTON_EDIT: '수정하기',
   CONFIRM_NEW_TITLE: '코스를 등록하시겠습니까?',
+  CONFIRM_NEW_CONTENT: '등록 후에는 경로를 수정할 수 없습니다.',
   CONFIRM_EDIT_TITLE: '코스를 수정하시겠습니까?',
   CONFIRM_BUTTON: '확인',
 } as const;
@@ -97,6 +98,7 @@ export default function CourseSubmit({ mode, courseId, initialData }: CourseSubm
     openModal({
       type: 'confirm',
       title: isEdit ? TEXTS.CONFIRM_EDIT_TITLE : TEXTS.CONFIRM_NEW_TITLE,
+      content: isEdit ? undefined : TEXTS.CONFIRM_NEW_CONTENT,
       confirmText: TEXTS.CONFIRM_BUTTON,
       onConfirm: () => {
         void handleSubmit();
