@@ -45,7 +45,7 @@ export function Step1({ onNext }: Props) {
       <div className={styles.buttonRow}>
         <button type="button" className={styles.buttonNext} onClick={onNext}>
           다음
-          <Icon name="chevronRight" size={16} />
+          <Icon name="chevronRight" size={16} className={styles.step2NextIcon} />
         </button>
       </div>
     </>
