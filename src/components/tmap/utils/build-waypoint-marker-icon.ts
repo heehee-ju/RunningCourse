@@ -10,7 +10,7 @@ function markerTitleByRole(role: WaypointMarkerRole): string {
   return '경유지';
 }
 
-/** 경유지 순번별 깃발 (`flag_point_1` … `flag_point_5`); 6번째 이상은 5번 아이콘으로 표시 */
+/** 경유지 순번별 깃발 (`flag_point=1` … `flag_point=5`); 6번째 이상은 5번 아이콘으로 표시 */
 export const WAYPOINT_VIA_ICON_MAX_ORDER = 5;
 
 const START_END_ICON: Record<Exclude<WaypointMarkerRole, 'via'>, string> = {
@@ -25,7 +25,7 @@ export function getWaypointMarkerIconUrl(role: WaypointMarkerRole, viaOrder?: nu
   if (role === 'via') {
     const raw = viaOrder ?? 1;
     const n = Math.min(Math.max(Math.trunc(raw), 1), WAYPOINT_VIA_ICON_MAX_ORDER);
-    return `/icons/flag_point_${String(n)}.png`;
+    return `/icons/flag_point=${String(n)}.png`;
   }
   return START_END_ICON[role];
 }
