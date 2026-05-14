@@ -1,0 +1,159 @@
+/* 홈 헤더용 우측 메뉴 드로어 — Layout .container와 동일 폭(max 769px) 안에서만 표시 */
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.rootOpen {
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.dismissOutside {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  background: transparent;
+}
+
+.column {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 769px;
+  height: 100%;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--color-black-500) 40%, transparent);
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+.rootOpen .backdrop {
+  opacity: 1;
+}
+
+.panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 280px;
+  max-width: 100%;
+  padding: 16px;
+  background: var(--color-white-500);
+  border-left: 1px solid var(--color-white_grey-500);
+  box-shadow: -4px 0 24px color-mix(in srgb, var(--color-black-500) 12%, transparent);
+  transform: translateX(100%);
+  transition: transform 280ms cubic-bezier(0.2, 0.85, 0.25, 1);
+}
+
+.rootOpen .panel {
+  transform: translateX(0);
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-shrink: 0;
+  margin-bottom: 16px;
+}
+
+.closeButton {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-black-500);
+  cursor: pointer;
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid var(--color-blue-500);
+  outline-offset: 2px;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  color: var(--color-black-500);
+  font-family: var(--typography-body-2-ko-mobile-semibold-font-family);
+  font-size: var(--typography-body-2-ko-mobile-semibold-font-size);
+  font-weight: var(--typography-body-2-ko-mobile-semibold-font-weight);
+  letter-spacing: var(--typography-body-2-ko-mobile-semibold-letter-spacing);
+  line-height: var(--typography-body-2-ko-mobile-semibold-line-height);
+  text-decoration: none;
+  background: transparent;
+  transition: background-color 160ms ease-out;
+}
+
+.navLinkLabel {
+  min-width: 0;
+}
+
+.noticeNewBadge {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-red-500);
+  color: var(--color-white-500);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.navLink:hover {
+  background: var(--color-dark_grey-50);
+}
+
+.navLink:focus-visible {
+  outline: 2px solid var(--color-blue-500);
+  outline-offset: 2px;
+}
