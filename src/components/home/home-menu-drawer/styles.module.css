@@ -25,7 +25,13 @@
   width: 100%;
   height: 100%;
   cursor: pointer;
-  background: transparent;
+  background: color-mix(in srgb, var(--color-black-500) 40%, transparent);
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+.rootOpen .dismissOutside {
+  opacity: 1;
 }
 
 .column {
@@ -46,17 +52,11 @@
   width: 100%;
   height: 100%;
   cursor: pointer;
-  background: color-mix(in srgb, var(--color-black-500) 40%, transparent);
-  opacity: 0;
-  transition: opacity 200ms ease-out;
-}
-
-.rootOpen .backdrop {
-  opacity: 1;
+  background: transparent;
 }
 
 .panel {
-  position: absolute;
+  position: fixed;
   top: 0;
   right: 0;
   bottom: 0;
