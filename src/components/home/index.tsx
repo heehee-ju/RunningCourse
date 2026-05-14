@@ -12,6 +12,7 @@ import type { Route, RouteViewport } from '@/commons/types/runroute';
 import { CoursesList } from '@/components/courses-list';
 import { TmapHome } from '@/components/tmap/home';
 
+import { HomeMenuDrawer } from './home-menu-drawer';
 import { useRoutes } from './hooks/index.use-routes';
 import { useClearSelectedRouteSnapshotOnDeselect } from './hooks/use-clear-selected-route-snapshot';
 import { useHomeCourseMarkerClick } from './hooks/use-home-course-marker-click';
@@ -32,6 +33,7 @@ import {
 } from './utils/home-route-derivations';
 
 export function Home() {
+  const [isHomeMenuOpen, setIsHomeMenuOpen] = useState(false);
   const [sheetVisibleHeight, setSheetVisibleHeight] = useState(260);
   const [sheetVisualVisibleHeight, setSheetVisualVisibleHeight] = useState(260);
   const sheetVisibleHeightRef = useRef(sheetVisibleHeight);
@@ -148,8 +150,19 @@ export function Home() {
     <section className={styles.container}>
       <OnboardingModal />
       <div className={styles.topChrome}>
-        <Header showLogo showLeftIcon={false} showRightIcon={false} title="루트런" />
+        <Header
+          showLogo
+          showLeftIcon={false}
+          showRightIcon
+          rightIconName="menu"
+          rightIconAriaLabel="메뉴 열기"
+          onRightIconClick={() => {
+            setIsHomeMenuOpen(true);
+          }}
+          title="루트런"
+        />
       </div>
+      <HomeMenuDrawer open={isHomeMenuOpen} onClose={() => setIsHomeMenuOpen(false)} />
       <div className={styles.tab}>
         <div className={styles.tabScroll}>
           {TAB_ITEMS.map((tab) => (

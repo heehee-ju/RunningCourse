@@ -18,14 +18,26 @@ const START_END_ICON: Record<Exclude<WaypointMarkerRole, 'via'>, string> = {
   end: '/icons/flag_finish.png',
 };
 
+export type WaypointMarkerIconOptions = {
+  /** 왕복 코스일 때 마지막 저장 지점은 도착이 아니라 반환 지점으로 표시 */
+  isRoundTrip?: boolean;
+};
+
 /**
  * @param viaOrder 경유지일 때만 사용. 출발지 인덱스 0 기준으로 첫 경유지는 `1`(=`points` 배열 인덱스).
  */
-export function getWaypointMarkerIconUrl(role: WaypointMarkerRole, viaOrder?: number): string {
+export function getWaypointMarkerIconUrl(
+  role: WaypointMarkerRole,
+  viaOrder?: number,
+  options?: WaypointMarkerIconOptions,
+): string {
   if (role === 'via') {
     const raw = viaOrder ?? 1;
     const n = Math.min(Math.max(Math.trunc(raw), 1), WAYPOINT_VIA_ICON_MAX_ORDER);
     return `/icons/flag_point=${String(n)}.png`;
+  }
+  if (role === 'end' && options?.isRoundTrip) {
+    return '/icons/flag_turn.png';
   }
   return START_END_ICON[role];
 }
