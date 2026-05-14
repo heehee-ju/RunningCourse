@@ -9,8 +9,8 @@ export type WaypointMarkerIconOptions = {
 export const WAYPOINT_VIA_ICON_MAX_ORDER = 5;
 
 const START_END_ICON: Record<Exclude<WaypointMarkerRole, 'via'>, string> = {
-  start: '/icons/flag_start.png',
-  end: '/icons/flag_finish.png',
+  start: '/assets/icons/courses-point/flag_start.png',
+  end: '/assets/icons/courses-point/flag_finish.png',
 };
 
 function markerTitleByRole(role: WaypointMarkerRole): string {
@@ -30,10 +30,10 @@ export function getWaypointMarkerIconUrl(
   if (role === 'via') {
     const raw = viaOrder ?? 1;
     const n = Math.min(Math.max(Math.trunc(raw), 1), WAYPOINT_VIA_ICON_MAX_ORDER);
-    return `/icons/flag_point=${String(n)}.png`;
+    return `/assets/icons/courses-point/flag_point=${String(n)}.png`;
   }
   if (role === 'end' && options?.isRoundTrip) {
-    return '/icons/flag_turn.png';
+    return '/assets/icons/courses-point/flag_turn.png';
   }
   return START_END_ICON[role];
 }
