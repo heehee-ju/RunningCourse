@@ -5,14 +5,15 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { Icon } from '@/commons/components/icons';
 import { TabButton } from '@/commons/components/tab';
+import { TAB_ITEMS } from '@/commons/constants/home';
 import { ROUTES } from '@/commons/constants/url';
 import { useCourseLikes } from '@/commons/hooks/useCourseLikes';
 import { Header } from '@/commons/layout/header';
+import { Sidebar } from '@/commons/layout/sidebar';
 import type { Route, RouteViewport } from '@/commons/types/runroute';
 import { CoursesList } from '@/components/courses-list';
 import { TmapHome } from '@/components/tmap/home';
 
-import { HomeMenuDrawer } from './home-menu-drawer';
 import { useRoutes } from './hooks/index.use-routes';
 import { useClearSelectedRouteSnapshotOnDeselect } from './hooks/use-clear-selected-route-snapshot';
 import { useHomeCourseMarkerClick } from './hooks/use-home-course-marker-click';
@@ -25,7 +26,6 @@ import { useReferenceLocation } from './hooks/use-reference-location';
 import { OnboardingModal } from './onboarding-modal';
 import styles from './styles.module.css';
 import { buildCourseCardViews } from './utils/course-filter';
-import { TAB_ITEMS } from './utils/home-constants';
 import { buildCourseLikeCountsLookup } from './utils/home-like-counts';
 import {
   computeFilteredRoutesForHome,
@@ -162,7 +162,7 @@ export function Home() {
           title="루트런"
         />
       </div>
-      <HomeMenuDrawer open={isHomeMenuOpen} onClose={() => setIsHomeMenuOpen(false)} />
+      <Sidebar open={isHomeMenuOpen} onClose={() => setIsHomeMenuOpen(false)} />
       <div className={styles.tab}>
         <div className={styles.tabScroll}>
           {TAB_ITEMS.map((tab) => (

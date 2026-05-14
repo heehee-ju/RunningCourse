@@ -4,7 +4,6 @@
 // 예) 좋아요 누르기, 코스 등록 폼 제출
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 
 import type { Route } from '@/commons/types/runroute';
 import { createClient } from '@/lib/supabase/server';
@@ -13,10 +12,9 @@ import { reverseGeocodeRegion } from '@/repositories/map.repository';
 import * as courseService from '@/services/course/courseService';
 import type { SubmitCourseInput } from '@/services/course/courseService';
 
-export type CreateCourseActionError = {
-  success: false;
-  message: string;
-};
+export type CreateCourseActionResult =
+  | { success: true; courseId: string }
+  | { success: false; message: string };
 
 type DeleteCourseActionResult = { success: true } | { success: false; error: string };
 
@@ -102,27 +100,21 @@ export async function toggleCourseLikeAction(
  */
 export async function createCourseAction(
   input: SubmitCourseInput,
-): Promise<CreateCourseActionError | void> {
+): Promise<CreateCourseActionResult> {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return {
-      success: false,
-      message: '로그인이 필요합니다.',
-    };
+    return { success: false, message: '로그인이 필요합니다.' };
   }
 
   const start_lat = input.routeData?.startPoint?.lat;
   const start_lng = input.routeData?.startPoint?.lng;
 
   if (!isFiniteNumber(start_lat) || !isFiniteNumber(start_lng)) {
-    return {
-      success: false,
-      message: '지도에서 경로를 완전히 지정해 주세요.',
-    };
+    return { success: false, message: '지도에서 경로를 완전히 지정해 주세요.' };
   }
 
   const distance_meters = toDistanceMetersSafe(input.routeData.totalDistanceKm);
@@ -152,14 +144,12 @@ export async function createCourseAction(
   });
 
   if (error || !data) {
-    return {
-      success: false,
-      message: error?.message ?? '코스 등록에 실패했습니다.',
-    };
+    return { success: false, message: error?.message ?? '코스 등록에 실패했습니다.' };
   }
 
   revalidatePath('/');
-  redirect(`/courses/${data.id}`);
+  revalidatePath('/courses');
+  return { success: true, courseId: data.id };
 }
 
 export async function deleteCourseAction(routeId: string): Promise<DeleteCourseActionResult> {

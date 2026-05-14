@@ -21,12 +21,12 @@ const COPY = {
   report: '제보하기',
 } as const;
 
-export type HomeMenuDrawerProps = {
+export type SidebarProps = {
   open: boolean;
   onClose: () => void;
 };
 
-export function HomeMenuDrawer({ open, onClose }: HomeMenuDrawerProps) {
+export function Sidebar({ open, onClose }: SidebarProps) {
   const hasNoticeUnread = useNoticeUnread();
 
   useEffect(() => {

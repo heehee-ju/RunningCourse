@@ -4,9 +4,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Icon } from '@/commons/components/icons';
 import type { Route, RouteViewport } from '@/commons/types/runroute';
+import { bindMapEvents } from '@/commons/utils/tmap/events';
+import { getTmapv3Runtime } from '@/commons/utils/tmap/runtime';
+import type {
+  RouteMarkerEntry,
+  TmapLatLng,
+  TmapMap,
+  TmapMarker,
+  TmapMarkerCluster,
+} from '@/commons/utils/tmap/types';
 import { useCurrentLocationMarker } from '@/components/tmap/commons/hooks/useCurrentLocationMarker';
-import { bindMapEvents } from '@/components/tmap/utils/events';
-import { getTmapv3Runtime } from '@/components/tmap/utils/runtime';
 
 import { useHomeMapLifecycle } from './hooks/useHomeMapLifecycle';
 import { useMapZoomControls } from './hooks/useMapZoomControls';
@@ -14,8 +21,6 @@ import { useRouteMarkers } from './hooks/useRouteMarkers';
 import { useSelectedRoutePolyline } from './hooks/useSelectedRoutePolyline';
 import { useViewportReporter } from './hooks/useViewportReporter';
 import styles from './styles.module.css';
-
-import type { RouteMarkerEntry, TmapLatLng, TmapMap, TmapMarker, TmapMarkerCluster } from './types';
 
 /** 줌 시 마커 위경도 디버그 로그. 끄기: `localStorage.DEBUG_TMAP_MARKERS=0` · 항상 켜기: `=1` */
 function isMarkerCoordDebugEnabled(): boolean {

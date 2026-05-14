@@ -8,9 +8,15 @@ import type { Route, RouteViewport } from '@/commons/types/runroute';
 import {
   getCurrentPositionWithFallback,
   PRECISE_GEOLOCATION_OPTIONS,
-} from '@/components/tmap/commons/utils/geolocation';
+} from '@/commons/utils/geo/geolocation';
+import type {
+  RouteMarkerEntry,
+  TmapMap,
+  TmapMarker,
+  TmapMarkerCluster,
+  TmapV3API,
+} from '@/commons/utils/tmap/types';
 
-import type { RouteMarkerEntry, TmapMap, TmapMarker, TmapMarkerCluster, TmapV3API } from '../types';
 import type { MutableRefObject } from 'react';
 
 const INITIAL_MAP_ZOOM_LEVEL = 14;

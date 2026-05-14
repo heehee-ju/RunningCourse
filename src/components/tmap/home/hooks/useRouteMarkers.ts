@@ -5,17 +5,13 @@
 import { useCallback, useRef } from 'react';
 
 import type { Route } from '@/commons/types/runroute';
-import { resolveRouteStartForMapMarker } from '@/commons/utils/route-marker-position';
-import { getDistanceCategory, type DistanceCategory } from '@/components/home/utils/course-filter';
-import { applyPointerCursorToTmapMarker } from '@/components/tmap/utils/apply-pointer-cursor-to-tmap-marker';
-import { bindSingleEvent } from '@/components/tmap/utils/events';
-
+import { getDistanceCategory, type DistanceCategory } from '@/commons/utils/distance/category';
 import {
   getRunningCourseMarkerIconUrlForCategory,
   type MarkerVisualState,
-} from '../build-running-course-marker-icon';
-import { syncRouteMarkerDomVisualState } from '../sync-route-marker-dom-visual';
-
+} from '@/commons/utils/marker/route-marker';
+import { resolveRouteStartForMapMarker } from '@/commons/utils/route-marker-position';
+import { bindSingleEvent } from '@/commons/utils/tmap/events';
 import type {
   RouteMarkerEntry,
   TmapLatLng,
@@ -23,7 +19,11 @@ import type {
   TmapMarker,
   TmapMarkerCluster,
   TmapV3API,
-} from '../types';
+} from '@/commons/utils/tmap/types';
+import { applyPointerCursorToTmapMarker } from '@/components/tmap/commons/utils/apply-pointer-cursor-to-tmap-marker';
+
+import { syncRouteMarkerDomVisualState } from '../sync-route-marker-dom-visual';
+
 import type { MutableRefObject } from 'react';
 
 const ROUTE_MARKER_CLUSTER_ZOOM_AT_OR_BELOW = 13;

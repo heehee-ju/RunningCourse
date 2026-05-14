@@ -1,5 +1,5 @@
 import { NoticeSeenTracker } from '@/components/notice/notice-seen-tracker';
-import { StaticInfoPage } from '@/components/static-info-page';
+import { StaticInfoPage } from '@/components/report';
 
 export default function NoticePage() {
   return (

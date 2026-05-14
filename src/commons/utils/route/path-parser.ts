@@ -1,10 +1,6 @@
-/**
- * 코스 상세 지도용 path_data 파싱·웨이포인트 모델 생성.
- */
+import type { WaypointMarkerRole } from '@/commons/utils/marker/waypoint-marker';
 
-import type { WaypointMarkerRole } from '@/components/tmap/utils/build-waypoint-marker-icon';
-
-const LOG = '[TmapCourseDetail]';
+const LOG = '[PathParser]';
 
 export type LatLng = { lat: number; lng: number };
 
@@ -26,7 +22,6 @@ function toWgs84FromEpsg3857(x: number, y: number): LatLng {
   const projectedLat = (y / 20037508.34) * 180;
   const normalizedLat =
     (180 / Math.PI) * (2 * Math.atan(Math.exp((projectedLat * Math.PI) / 180)) - Math.PI / 2);
-
   return { lat: normalizedLat, lng: normalizedLng };
 }
 
@@ -57,14 +52,8 @@ function normalizeCoordinatePair(
   const second = Number(value[1]);
   if (!Number.isFinite(first) || !Number.isFinite(second)) return null;
 
-  if (coordinateSystem === 'EPSG3857') {
-    return toWgs84FromEpsg3857(first, second);
-  }
-
-  if (coordinateSystem === 'WGS84_LATLNG') {
-    return normalizeWgs84Coordinate(first, second);
-  }
-
+  if (coordinateSystem === 'EPSG3857') return toWgs84FromEpsg3857(first, second);
+  if (coordinateSystem === 'WGS84_LATLNG') return normalizeWgs84Coordinate(first, second);
   return normalizeWgs84Coordinate(second, first);
 }
 
@@ -80,9 +69,7 @@ function parseCoordinatePair(value: unknown): CoordinatePair | null {
     const record = value as Record<string, unknown>;
     const lat = Number(record.lat);
     const lng = Number(record.lng);
-    if (Number.isFinite(lat) && Number.isFinite(lng)) {
-      return [lng, lat];
-    }
+    if (Number.isFinite(lat) && Number.isFinite(lng)) return [lng, lat];
   }
 
   return null;
@@ -91,9 +78,7 @@ function parseCoordinatePair(value: unknown): CoordinatePair | null {
 function parseCoordinateSequence(value: unknown): CoordinatePair[] {
   if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
     const record = value as Record<string, unknown>;
-    if ('coordinates' in record) {
-      return parseCoordinateSequence(record.coordinates);
-    }
+    if ('coordinates' in record) return parseCoordinateSequence(record.coordinates);
     return [];
   }
   if (!Array.isArray(value)) return [];
@@ -105,7 +90,6 @@ function parseCoordinateSequence(value: unknown): CoordinatePair[] {
       sequence.push(pair);
       return;
     }
-
     const nested = parseCoordinateSequence(item);
     if (nested.length > 0) sequence.push(...nested);
   });
@@ -130,9 +114,7 @@ function collectCoordinateCandidates(
 
   if (Array.isArray(value)) {
     const sequence = parseCoordinateSequence(value);
-    if (sequence.length >= 2) {
-      result.push({ keyPath, pairs: sequence });
-    }
+    if (sequence.length >= 2) result.push({ keyPath, pairs: sequence });
 
     value.forEach((item, index) => {
       collectCoordinateCandidates(item, `${keyPath}[${index}]`, result);
@@ -159,9 +141,7 @@ function collectCoordinateCandidates(
     const lowerKey = key.toLowerCase();
     if (lowerKey === 'path' || lowerKey === 'features' || lowerKey === 'coordinates') {
       const sequence = parseCoordinateSequence(resolvedNested);
-      if (sequence.length >= 2) {
-        result.push({ keyPath: `${keyPath}.${key}`, pairs: sequence });
-      }
+      if (sequence.length >= 2) result.push({ keyPath: `${keyPath}.${key}`, pairs: sequence });
     }
     collectCoordinateCandidates(resolvedNested, `${keyPath}.${key}`, result);
   });
@@ -209,9 +189,7 @@ export function extractSavedRoutePoints(rawPathData: unknown): LatLng[] {
     const record = item as Record<string, unknown>;
     const lat = Number(record.lat);
     const lng = Number(record.lng);
-    if (Number.isFinite(lat) && Number.isFinite(lng)) {
-      result.push({ lat, lng });
-    }
+    if (Number.isFinite(lat) && Number.isFinite(lng)) result.push({ lat, lng });
   });
   return result;
 }

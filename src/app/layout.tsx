@@ -1,6 +1,7 @@
 import { Layout } from '@/commons/layout';
 import { AuthProvider } from '@/commons/providers/auth/auth.provider';
 import { ModalProvider } from '@/commons/providers/modal/modal.provider';
+import { ToastProvider } from '@/commons/providers/toast/toast.provider';
 import { createClient } from '@/lib/supabase/server';
 import { getUserRouteWriteCount } from '@/services/course/courseService';
 
@@ -65,7 +66,7 @@ export default async function RootLayout({
       error: userError,
     } = await supabase.auth.getUser();
 
-    if (userError) {
+    if (userError && userError.message !== 'Auth session missing!') {
       console.error('[RootLayout] getUser 실패:', userError.message);
     }
 
@@ -99,7 +100,9 @@ export default async function RootLayout({
       <body className="antialiased">
         <AuthProvider>
           <ModalProvider>
-            <Layout hasWrittenCourse={hasWrittenCourse}>{children}</Layout>
+            <ToastProvider>
+              <Layout hasWrittenCourse={hasWrittenCourse}>{children}</Layout>
+            </ToastProvider>
           </ModalProvider>
         </AuthProvider>
       </body>

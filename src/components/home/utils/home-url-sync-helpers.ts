@@ -1,8 +1,8 @@
 // 홈 URL 동기화 훅에서 쓰는 순수 함수(쿼리 병합·거리 탭 파싱 등).
 
-import { TAB_ITEMS } from './home-constants';
+import { TAB_ITEMS } from '@/commons/constants/home';
+import type { DistanceCategory } from '@/commons/utils/distance/category';
 
-import type { DistanceCategory } from './course-filter';
 import type { ReadonlyURLSearchParams } from 'next/navigation';
 
 /** 콤마 구분 거리 탭 값 → 유효한 카테고리만 담은 Set */

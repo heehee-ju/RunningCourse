@@ -8,11 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Route } from '@/commons/types/runroute';
 import type { TmapV3 } from '@/commons/types/tmap';
-import { getWaypointMarkerIconUrl } from '@/components/tmap/utils/build-waypoint-marker-icon';
-import { bindMapEvents } from '@/components/tmap/utils/events';
-import { getTmapv3Runtime } from '@/components/tmap/utils/runtime';
-import { getPedestrianRoute } from '@/repositories/map.repository';
-
+import { getWaypointMarkerIconUrl } from '@/commons/utils/marker/waypoint-marker';
 import {
   buildWaypointMarkerModels,
   dedupeConsecutiveCoordinates,
@@ -20,7 +16,11 @@ import {
   extractSavedRoutePoints,
   type LatLng,
   sanitizeDomIdSegment,
-} from './path-data';
+} from '@/commons/utils/route/path-parser';
+import { bindMapEvents } from '@/commons/utils/tmap/events';
+import { getTmapv3Runtime } from '@/commons/utils/tmap/runtime';
+import { getPedestrianRoute } from '@/repositories/map.repository';
+
 import styles from './styles.module.css';
 
 const LOG = '[TmapCourseDetail]';

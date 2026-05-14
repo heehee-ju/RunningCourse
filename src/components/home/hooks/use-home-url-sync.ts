@@ -4,17 +4,17 @@
 
 import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
 
+import { HOME_QUERY_KEYS, HOME_SESSION_KEYS, TAB_ITEMS } from '@/commons/constants/home';
 import type { RouteViewport } from '@/commons/types/runroute';
+import type { DistanceCategory } from '@/commons/utils/distance/category';
+import { isValidRouteViewport } from '@/commons/utils/viewport/route-viewport';
 
-import { HOME_QUERY_KEYS, HOME_SESSION_KEYS, TAB_ITEMS } from '../utils/home-constants';
 import {
   areDistanceCategorySetsEqual,
   parseDistanceCategoriesFromQuery,
   resolveHomeSearchParamsForRead,
 } from '../utils/home-url-sync-helpers';
-import { isValidRouteViewport } from '../utils/viewport';
 
-import type { DistanceCategory } from '../utils/course-filter';
 import type { ReadonlyURLSearchParams } from 'next/navigation';
 
 type UseHomeUrlSyncParams = {

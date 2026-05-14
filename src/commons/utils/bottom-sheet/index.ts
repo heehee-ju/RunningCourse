@@ -1,5 +1,3 @@
-// 코스 목록 바텀시트 순수 계산·상수 (드래그 임계값·상태 전이)
-
 export type BottomSheetState = 'collapsed' | 'peek' | 'expanded';
 
 export const SHEET_ORDER: BottomSheetState[] = ['collapsed', 'peek', 'expanded'];

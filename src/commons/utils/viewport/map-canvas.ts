@@ -1,12 +1,7 @@
-/**
- * 홈 지도: 전체 캔버스 bounds와 바텀 오버레이(바텀시트) 높이로
- * 사용자에게 실제로 보이는 지도 영역의 RouteViewport를 근사 계산한다.
- */
 import type { RouteViewport } from '@/commons/types/runroute';
 
 type PixelLatLng = { lat: number; lng: number };
 
-/** 컨테이너 픽셀(좌상단 원점)을 전체 맵 bounds 기준 선형 보간 위경도로 변환 */
 function pixelToLatLngLinear(
   px: number,
   py: number,
