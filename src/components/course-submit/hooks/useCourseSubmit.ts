@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import { createCourseAction, updateCourseAction } from '@/actions/course.action';
+import { useToast } from '@/commons/providers/toast/toast.provider';
 import { uploadCourseImages } from '@/commons/utils/storage.util';
 import type { SaveRoutePayload } from '@/components/tmap/course-submit/hooks/useCourseMap';
 import type { CourseDetailPayload } from '@/services/course/courseDetailService';
@@ -57,6 +58,7 @@ export function isRouteDataCompleteForSubmit(data: RouteData | null): data is Ro
 
 export function useCourseSubmit({ mode, courseId, initialData }: UseCourseSubmitParams) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [courseName, setCourseName] = useState('');
   const [description, setDescription] = useState('');
   /** 편집 시 서버에 이미 저장된 이미지 URL (신규 업로드와 합쳐 수정 요청에 사용) */
@@ -160,7 +162,7 @@ export function useCourseSubmit({ mode, courseId, initialData }: UseCourseSubmit
         });
 
         if (!result.success) {
-          window.alert(result.error);
+          showToast(result.error ?? '코스 수정에 실패했습니다.', 'failed');
           return;
         }
 
@@ -168,7 +170,7 @@ export function useCourseSubmit({ mode, courseId, initialData }: UseCourseSubmit
       } catch (error) {
         const message =
           error instanceof Error ? error.message : '코스 수정 중 오류가 발생했습니다.';
-        window.alert(message);
+        showToast(message, 'failed');
       }
       return;
     }
@@ -192,14 +194,27 @@ export function useCourseSubmit({ mode, courseId, initialData }: UseCourseSubmit
         imageUrls,
       });
 
-      if (result && !result.success) {
-        window.alert(result.message);
+      if (!result.success) {
+        showToast(result.message ?? '코스 등록에 실패했습니다.', 'failed');
+        return;
       }
+
+      router.push(`/courses/${result.courseId}?registered=true`);
     } catch (error) {
       const message = error instanceof Error ? error.message : '코스 등록 중 오류가 발생했습니다.';
-      window.alert(message);
+      showToast(message, 'failed');
     }
-  }, [courseName, courseId, description, existingImageUrls, images, mode, routeData, router]);
+  }, [
+    courseName,
+    courseId,
+    description,
+    existingImageUrls,
+    images,
+    mode,
+    routeData,
+    router,
+    showToast,
+  ]);
 
   return {
     courseName,

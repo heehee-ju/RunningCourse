@@ -10,6 +10,7 @@ import { toggleCourseLikeAction } from '@/actions/course.action';
 import { ROUTES } from '@/commons/constants/url';
 import { useAuth } from '@/commons/providers/auth/auth.provider';
 import { useModal } from '@/commons/providers/modal/modal.provider';
+import { useToast } from '@/commons/providers/toast/toast.provider';
 import { fetchLikedCourseIds } from '@/services/course/courseLikeService';
 
 import type { User } from '@supabase/supabase-js';
@@ -30,6 +31,7 @@ function clampLikeCount(value: number): number {
 export function useCourseLikes(initialLikeCounts: LikeCountsByCourseId) {
   const { user, isLoggedIn, isAnonymous, isLoading } = useAuth();
   const { openModal } = useModal();
+  const { showToast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
   const [likedCourseIds, setLikedCourseIds] = useState<Set<string>>(new Set());
@@ -128,6 +130,7 @@ export function useCourseLikes(initialLikeCounts: LikeCountsByCourseId) {
       }
 
       console.error('[useCourseLikes] 찜 상태 변경 실패:', result.error);
+      showToast('좋아요 처리에 실패했습니다.', 'failed');
       setLikedCourseIds((previous) => {
         const next = new Set(previous);
         if (wasLiked) {
@@ -146,6 +149,7 @@ export function useCourseLikes(initialLikeCounts: LikeCountsByCourseId) {
       likedCourseIds,
       openGoogleLoginConfirm,
       pathname,
+      showToast,
       user,
     ],
   );
