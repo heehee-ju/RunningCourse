@@ -9,10 +9,10 @@ import {
   dedupeConsecutiveCoordinates,
   extractPathCoordinates,
   extractSavedRoutePoints,
-} from '@/components/tmap/course-detail/path-data';
+} from '@/commons/utils/route/path-parser';
+import type { TmapMap, TmapPolyline, TmapV3API } from '@/commons/utils/tmap/types';
 import { getPedestrianRoute } from '@/repositories/map.repository';
 
-import type { TmapMap, TmapPolyline, TmapV3API } from '../types';
 import type { MutableRefObject } from 'react';
 
 const MOBILE_VIEWPORT_MAX_WIDTH_PX = 768;

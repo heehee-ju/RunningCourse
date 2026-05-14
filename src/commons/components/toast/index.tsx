@@ -20,15 +20,16 @@ import Icon from '@/commons/components/icons';
 import styles from './styles.module.css';
 
 const TOAST_TEXT = {
-  success: '코스 등록이 완료되었습니다!',
-  failed: '코스 등록에 실패했습니다. 다시 시도해 주세요.',
+  success: '완료되었습니다!',
+  failed: '오류가 발생했습니다. 다시 시도해 주세요.',
 } as const;
 
 interface ToastProps {
   state: 'success' | 'failed';
+  message?: string;
 }
 
-export const Toast = ({ state }: ToastProps) => {
+export const Toast = ({ state, message }: ToastProps) => {
   return (
     <div className={`${styles.toast} ${styles[state]}`} role="status" aria-live="polite">
       <div className={styles.inner}>
@@ -39,7 +40,7 @@ export const Toast = ({ state }: ToastProps) => {
             strokeWidth={2}
           />
         </span>
-        <span className={styles.text}>{TOAST_TEXT[state]}</span>
+        <span className={styles.text}>{message ?? TOAST_TEXT[state]}</span>
       </div>
     </div>
   );

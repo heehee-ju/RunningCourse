@@ -4,7 +4,8 @@
 
 import { useCallback, useRef } from 'react';
 
-import type { TmapMap } from '../types';
+import type { TmapMap } from '@/commons/utils/tmap/types';
+
 import type { RefObject } from 'react';
 
 const MIN_ZOOM_LEVEL = 8;

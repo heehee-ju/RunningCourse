@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 
-import type { DistanceCategory } from '../utils/course-filter';
+import type { DistanceCategory } from '@/commons/utils/distance/category';
 
 /** 홈 탭 거리 카테고리 필터(Set) 및 탭 클릭 토글 */
 export function useHomeDistanceCategories() {

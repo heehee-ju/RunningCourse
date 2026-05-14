@@ -4,14 +4,13 @@ import { useEffect, useId, useRef } from 'react';
 
 import { Button } from '@/commons/components/button';
 import { Icon } from '@/commons/components/icons';
+import { getCurrentPositionWithFallback } from '@/commons/utils/geo/geolocation';
+import { getTmapv3Runtime } from '@/commons/utils/tmap/runtime';
+import type { TmapMap } from '@/commons/utils/tmap/types';
 import { useCurrentLocationMarker } from '@/components/tmap/commons/hooks/useCurrentLocationMarker';
-import { getCurrentPositionWithFallback } from '@/components/tmap/commons/utils/geolocation';
-import { getTmapv3Runtime } from '@/components/tmap/utils/runtime';
 
 import { useCourseMap, type SaveRoutePayload } from './hooks/useCourseMap';
 import styles from './styles.module.css';
-
-import type { TmapMap } from '../home/types';
 
 type CourseSubmitMapProps = {
   onSaveRoute?: (payload: SaveRoutePayload) => void;

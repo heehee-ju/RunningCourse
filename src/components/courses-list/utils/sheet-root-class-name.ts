@@ -1,6 +1,6 @@
 // 바텀시트 상태·드래그 여부에 따라 코스 목록 루트 요소의 CSS 모듈 클래스 문자열을 만든다.
 
-import type { BottomSheetState } from './bottom-sheet';
+import type { BottomSheetState } from '@/commons/utils/bottom-sheet';
 
 export type CoursesListSheetModuleClasses = {
   courseList: string;

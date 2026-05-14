@@ -1,6 +1,4 @@
-// 홈 화면 탭·쿼리·세션 스토리지 키 상수
-
-import type { DistanceCategory } from './course-filter';
+import type { DistanceCategory } from '@/commons/utils/distance/category';
 
 export const TAB_ITEMS = [
   { label: '~3km', variant: 'blue' as const, category: 'UNDER_3' as const },

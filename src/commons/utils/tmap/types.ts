@@ -1,10 +1,5 @@
-/**
- * 홈 Tmap 컴포넌트에서 공통으로 쓰는 런타임 타입 모음.
- */
-
-import type { DistanceCategory } from '@/components/home/utils/course-filter';
-
-import type { MarkerVisualState } from './build-running-course-marker-icon';
+import type { DistanceCategory } from '@/commons/utils/distance/category';
+import type { MarkerVisualState } from '@/commons/utils/marker/route-marker';
 
 export type TmapLatLng = {
   lat?: (() => number) | number;

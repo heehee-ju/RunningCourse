@@ -1,7 +1,8 @@
 // 초기 코스 데이터 로딩 시 카드 목록 영역에 표시하는 스켈레톤 UI
 
+import { SKELETON_CARD_COUNT } from '@/commons/utils/bottom-sheet';
+
 import styles from '../styles.module.css';
-import { SKELETON_CARD_COUNT } from '../utils/bottom-sheet';
 
 export function CoursesListSkeleton() {
   return (

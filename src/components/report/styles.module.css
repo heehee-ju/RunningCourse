@@ -1,0 +1,26 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  background: var(--color-white-500);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  padding: 20px 16px;
+  overflow-y: auto;
+}
+
+.text {
+  margin: 0;
+  color: var(--color-grey-700);
+  font-family: var(--typography-body-2-ko-mobile-regular-font-family);
+  font-size: var(--typography-body-2-ko-mobile-regular-font-size);
+  font-weight: var(--typography-body-2-ko-mobile-regular-font-weight);
+  letter-spacing: var(--typography-body-2-ko-mobile-regular-letter-spacing);
+  line-height: var(--typography-body-2-ko-mobile-regular-line-height);
+}

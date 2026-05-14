@@ -1,6 +1,8 @@
 export const ROUTES = {
   LOGIN: '/login',
   HOME: '/home',
+  NOTICE: '/notice',
+  REPORT: '/report',
   COURSES: {
     DETAIL: (id: string | number) => `/courses/${id}`,
     NEW: '/courses/new',
@@ -27,6 +29,18 @@ export const ROUTE_CONFIG: Record<string, RouteConfig> = {
   },
   HOME: {
     path: ROUTES.HOME,
+    access: 'public',
+    header: true,
+    navigationBar: true,
+  },
+  NOTICE: {
+    path: ROUTES.NOTICE,
+    access: 'public',
+    header: true,
+    navigationBar: true,
+  },
+  REPORT: {
+    path: ROUTES.REPORT,
     access: 'public',
     header: true,
     navigationBar: true,
@@ -62,6 +76,8 @@ export const NAVIGATION_BAR_ROUTES = [
   '/',
   ROUTES.LOGIN,
   ROUTES.HOME,
+  ROUTES.NOTICE,
+  ROUTES.REPORT,
   ROUTES.COURSES.NEW,
   ROUTES.MYPAGE,
 ] as const;

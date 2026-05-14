@@ -4,34 +4,17 @@ import type {
   Route,
   RouteViewport,
 } from '@/commons/types/runroute';
+import { type DistanceCategory, getDistanceCategory } from '@/commons/utils/distance/category';
 import {
   calculateLinearDistanceMeters,
   hasValidRouteStartCoordinate,
   SEOUL_CITY_HALL_REFERENCE as DEFAULT_REFERENCE,
 } from '@/commons/utils/geo';
+import { dedupeRoutesById } from '@/commons/utils/route/dedup';
 
-export type DistanceCategory = 'UNDER_3' | 'BETWEEN_3_AND_5' | 'BETWEEN_5_AND_10' | 'OVER_10';
+export type { DistanceCategory };
+export { getDistanceCategory, dedupeRoutesById };
 export const SEOUL_CITY_HALL_REFERENCE = DEFAULT_REFERENCE;
-
-// [분류] 거리값을 탭·지도 마커 카테고리로 변환 (홈 탭 라벨과 동일 구간)
-// ~3km(m≤3) → blue · 3~5km → green · 5~10km → red · 10km~(m>10km) → orange
-export function getDistanceCategory(distanceMeters: number): DistanceCategory {
-  const distanceKm = distanceMeters / 1000;
-
-  if (distanceKm <= 3) return 'UNDER_3';
-  if (distanceKm <= 5) return 'BETWEEN_3_AND_5';
-  if (distanceKm <= 10) return 'BETWEEN_5_AND_10';
-  return 'OVER_10';
-}
-
-// [정리] 코스 id 기준 중복 제거
-export function dedupeRoutesById(routes: Route[]): Route[] {
-  const deduped = new Map<string, Route>();
-  for (const route of routes) {
-    deduped.set(route.id, route);
-  }
-  return Array.from(deduped.values());
-}
 
 /** 시작점이 주어진 RouteViewport 안에 있는지 (useRoutes 클라이언트 필터와 동일 규칙). */
 export function isRouteStartInRouteViewport(route: Route, viewport: RouteViewport | null): boolean {

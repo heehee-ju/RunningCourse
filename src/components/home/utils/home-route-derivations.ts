@@ -1,13 +1,10 @@
 // 홈 코스 목록·지도용 파생 라우트 배열 계산 (순수 함수)
 
 import type { Route, RouteViewport } from '@/commons/types/runroute';
+import type { DistanceCategory } from '@/commons/utils/distance/category';
+import { dedupeRoutesById } from '@/commons/utils/route/dedup';
 
-import {
-  dedupeRoutesById,
-  filterRoutesByCategories,
-  filterRoutesByRouteViewport,
-  type DistanceCategory,
-} from './course-filter';
+import { filterRoutesByCategories, filterRoutesByRouteViewport } from './course-filter';
 
 /** 뷰포트 조회 결과 우선, 없을 때만 마커 클릭 시 저장한 스냅샷 사용 */
 function resolveSelectedRouteForMerge(

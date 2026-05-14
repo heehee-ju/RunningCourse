@@ -1,8 +1,8 @@
 import { useCallback, useRef } from 'react';
 
 import type { TmapCoordinate, TmapMapLike, TmapMarkerLike, TmapV3 } from '@/commons/types/tmap';
-import { getWaypointMarkerIconUrl } from '@/components/tmap/utils/build-waypoint-marker-icon';
-import { getTmapv3Runtime } from '@/components/tmap/utils/runtime';
+import { getWaypointMarkerIconUrl } from '@/commons/utils/marker/waypoint-marker';
+import { getTmapv3Runtime } from '@/commons/utils/tmap/runtime';
 
 import type { RefObject } from 'react';
 
@@ -34,10 +34,9 @@ export function useTmapOverlays(
         const role: MarkerRole = isStart ? 'start' : isEnd ? 'end' : 'via';
         const viaOrder = !isStart && !isEnd ? index : undefined;
 
-        const iconUrl =
-          role === 'end' && isRoundTripRef.current
-            ? '/icons/flag_turn.png'
-            : getWaypointMarkerIconUrl(role, viaOrder);
+        const iconUrl = getWaypointMarkerIconUrl(role, viaOrder, {
+          isRoundTrip: isRoundTripRef.current,
+        });
 
         const marker = new Tmapv3.Marker({
           // Tmap 공식 예제와 동일하게 LatLng(lat, lon) 순서로 변환한다.

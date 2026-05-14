@@ -1,7 +1,3 @@
-/**
- * Tmap 런타임별 이벤트 바인딩(on/addListener) 호환 유틸.
- */
-
 type EventBindable = {
   on?: (eventName: string, callback: () => void) => void;
   addListener?: (eventName: string, callback: () => void) => void;

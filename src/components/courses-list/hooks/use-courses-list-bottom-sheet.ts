@@ -19,7 +19,7 @@ import {
   computeSheetTranslateY,
   getNextSheetState,
   roundUpToEven,
-} from '../utils/bottom-sheet';
+} from '@/commons/utils/bottom-sheet';
 
 import type { PanInfo } from 'framer-motion';
 

@@ -5,9 +5,11 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { Icon } from '@/commons/components/icons';
 import { TabButton } from '@/commons/components/tab';
+import { TAB_ITEMS } from '@/commons/constants/home';
 import { ROUTES } from '@/commons/constants/url';
 import { useCourseLikes } from '@/commons/hooks/useCourseLikes';
 import { Header } from '@/commons/layout/header';
+import { Sidebar } from '@/commons/layout/sidebar';
 import type { Route, RouteViewport } from '@/commons/types/runroute';
 import { CoursesList } from '@/components/courses-list';
 import { TmapHome } from '@/components/tmap/home';
@@ -24,7 +26,6 @@ import { useReferenceLocation } from './hooks/use-reference-location';
 import { OnboardingModal } from './onboarding-modal';
 import styles from './styles.module.css';
 import { buildCourseCardViews } from './utils/course-filter';
-import { TAB_ITEMS } from './utils/home-constants';
 import { buildCourseLikeCountsLookup } from './utils/home-like-counts';
 import {
   computeFilteredRoutesForHome,
@@ -32,6 +33,7 @@ import {
 } from './utils/home-route-derivations';
 
 export function Home() {
+  const [isHomeMenuOpen, setIsHomeMenuOpen] = useState(false);
   const [sheetVisibleHeight, setSheetVisibleHeight] = useState(260);
   const [sheetVisualVisibleHeight, setSheetVisualVisibleHeight] = useState(260);
   const sheetVisibleHeightRef = useRef(sheetVisibleHeight);
@@ -148,8 +150,19 @@ export function Home() {
     <section className={styles.container}>
       <OnboardingModal />
       <div className={styles.topChrome}>
-        <Header showLogo showLeftIcon={false} showRightIcon={false} title="루트런" />
+        <Header
+          showLogo
+          showLeftIcon={false}
+          showRightIcon
+          rightIconName="menu"
+          rightIconAriaLabel="메뉴 열기"
+          onRightIconClick={() => {
+            setIsHomeMenuOpen(true);
+          }}
+          title="루트런"
+        />
       </div>
+      <Sidebar open={isHomeMenuOpen} onClose={() => setIsHomeMenuOpen(false)} />
       <div className={styles.tab}>
         <div className={styles.tabScroll}>
           {TAB_ITEMS.map((tab) => (

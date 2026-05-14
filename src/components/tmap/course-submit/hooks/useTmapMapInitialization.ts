@@ -1,8 +1,8 @@
 import { useCallback, useRef } from 'react';
 
 import type { TmapCoordinate, TmapLatLngLike, TmapMapLike, TmapV3 } from '@/commons/types/tmap';
-import { bindMapEvents } from '@/components/tmap/utils/events';
-import { getTmapv3Runtime } from '@/components/tmap/utils/runtime';
+import { bindMapEvents } from '@/commons/utils/tmap/events';
+import { getTmapv3Runtime } from '@/commons/utils/tmap/runtime';
 
 import { extractLatLngFromVectorEvent, MAX_POINT_LENGTH, toCoordinate } from './courseMap.utils';
 

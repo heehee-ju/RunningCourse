@@ -109,24 +109,23 @@
 }
 
 .summarySection {
-  flex-direction: row;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--color-grey-100);
 }
 
-.titleBlock {
+.titleRow {
   display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
 }
 
 .courseTitle {
   margin: 0;
+  flex: 1;
   min-width: 0;
   color: var(--color-black-900);
   font-family: var(--typography-heading-3-ko-desktop-semibold-font-family);
@@ -147,7 +146,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
+  overflow: hidden;
 }
 
 .distance {
@@ -199,6 +198,9 @@
   font-weight: var(--typography-body-2-ko-desktop-regular-font-weight);
   line-height: var(--typography-body-2-ko-desktop-regular-line-height);
   letter-spacing: var(--typography-body-2-ko-desktop-regular-letter-spacing);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .roundTripBadge {
@@ -209,6 +211,30 @@
   font-weight: var(--typography-body-2-ko-desktop-regular-font-weight);
   line-height: var(--typography-body-2-ko-desktop-regular-line-height);
   letter-spacing: var(--typography-body-2-ko-desktop-regular-letter-spacing);
+}
+
+.actionsGroup {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.shareButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  flex-shrink: 0;
+  gap: 2px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  color: var(--color-grey-500);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
 }
 
 .likeButton {
@@ -461,6 +487,7 @@
 
 /* utilities */
 .likeButton:focus-visible,
+.shareButton:focus-visible,
 .carouselButton:focus-visible {
   outline: 2px solid var(--color-blue-500);
   outline-offset: 2px;

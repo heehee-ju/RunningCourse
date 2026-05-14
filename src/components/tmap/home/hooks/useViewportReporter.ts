@@ -5,10 +5,9 @@
 import { useCallback, useRef } from 'react';
 
 import type { RouteViewport } from '@/commons/types/runroute';
+import type { TmapLatLng, TmapMap } from '@/commons/utils/tmap/types';
+import { computeVisibleRouteViewportFromMapCanvas } from '@/commons/utils/viewport/map-canvas';
 
-import { computeVisibleRouteViewportFromMapCanvas } from '../visible-map-viewport';
-
-import type { TmapLatLng, TmapMap } from '../types';
 import type { MutableRefObject } from 'react';
 
 type UseViewportReporterParams = {

@@ -10,17 +10,10 @@ import { toggleCourseLikeAction } from '@/actions/course.action';
 import { ROUTES } from '@/commons/constants/url';
 import { useAuth } from '@/commons/providers/auth/auth.provider';
 import { useModal } from '@/commons/providers/modal/modal.provider';
+import { useToast } from '@/commons/providers/toast/toast.provider';
 import { fetchLikedCourseIds } from '@/services/course/courseLikeService';
 
-import type { User } from '@supabase/supabase-js';
-
 type LikeCountsByCourseId = Record<string, number>;
-
-function isGoogleUser(user: User | null): boolean {
-  if (!user) return false;
-  if (user.app_metadata?.provider === 'google') return true;
-  return user.identities?.some((identity) => identity.provider === 'google') === true;
-}
 
 function clampLikeCount(value: number): number {
   if (!Number.isFinite(value)) return 0;
@@ -28,8 +21,9 @@ function clampLikeCount(value: number): number {
 }
 
 export function useCourseLikes(initialLikeCounts: LikeCountsByCourseId) {
-  const { user, isLoggedIn, isAnonymous, isLoading } = useAuth();
+  const { user, isLoggedIn, isLoading } = useAuth();
   const { openModal } = useModal();
+  const { showToast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
   const [likedCourseIds, setLikedCourseIds] = useState<Set<string>>(new Set());
@@ -37,7 +31,7 @@ export function useCourseLikes(initialLikeCounts: LikeCountsByCourseId) {
 
   const courseIds = useMemo(() => Object.keys(initialLikeCounts), [initialLikeCounts]);
   const courseIdsKey = useMemo(() => courseIds.join('|'), [courseIds]);
-  const canUseCourseLike = isLoggedIn && !isAnonymous && isGoogleUser(user);
+  const canUseCourseLike = isLoggedIn;
 
   useEffect(() => {
     if (isLoading) return;
@@ -68,8 +62,7 @@ export function useCourseLikes(initialLikeCounts: LikeCountsByCourseId) {
   const openGoogleLoginConfirm = useCallback(() => {
     openModal({
       type: 'confirm',
-      title:
-        "'코스 찜하기'는 구글 로그인을 한 유저만 이용가능합니다. 구글 계정으로 로그인 하시겠습니까?",
+      title: "'코스 좋아요'는 로그인한 유저만 이용가능합니다. 로그인 하시겠습니까?",
       confirmText: '네',
       cancelText: '아니오',
       onConfirm: () => {
@@ -128,6 +121,7 @@ export function useCourseLikes(initialLikeCounts: LikeCountsByCourseId) {
       }
 
       console.error('[useCourseLikes] 찜 상태 변경 실패:', result.error);
+      showToast('좋아요 처리에 실패했습니다.', 'failed');
       setLikedCourseIds((previous) => {
         const next = new Set(previous);
         if (wasLiked) {
@@ -146,6 +140,7 @@ export function useCourseLikes(initialLikeCounts: LikeCountsByCourseId) {
       likedCourseIds,
       openGoogleLoginConfirm,
       pathname,
+      showToast,
       user,
     ],
   );
