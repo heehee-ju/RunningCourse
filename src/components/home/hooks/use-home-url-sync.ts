@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
 
 import { HOME_QUERY_KEYS, HOME_SESSION_KEYS, TAB_ITEMS } from '@/commons/constants/home';
-import type { RouteViewport } from '@/commons/types/runroute';
+import type { RouteViewport } from '@/commons/types/routerun';
 import type { DistanceCategory } from '@/commons/utils/distance/category';
 import { isValidRouteViewport } from '@/commons/utils/viewport/route-viewport';
 

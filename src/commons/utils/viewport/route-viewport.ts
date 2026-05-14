@@ -1,4 +1,4 @@
-import type { RouteViewport } from '@/commons/types/runroute';
+import type { RouteViewport } from '@/commons/types/routerun';
 
 export function isValidRouteViewport(viewport: RouteViewport | null): viewport is RouteViewport {
   if (!viewport) return false;

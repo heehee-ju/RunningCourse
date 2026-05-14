@@ -3,7 +3,7 @@ import type {
   ReferenceLocation,
   Route,
   RouteViewport,
-} from '@/commons/types/runroute';
+} from '@/commons/types/routerun';
 import { type DistanceCategory, getDistanceCategory } from '@/commons/utils/distance/category';
 import {
   calculateLinearDistanceMeters,

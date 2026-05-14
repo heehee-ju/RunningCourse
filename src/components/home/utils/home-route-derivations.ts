@@ -1,6 +1,6 @@
 // 홈 코스 목록·지도용 파생 라우트 배열 계산 (순수 함수)
 
-import type { Route, RouteViewport } from '@/commons/types/runroute';
+import type { Route, RouteViewport } from '@/commons/types/routerun';
 import type { DistanceCategory } from '@/commons/utils/distance/category';
 import { dedupeRoutesById } from '@/commons/utils/route/dedup';
 

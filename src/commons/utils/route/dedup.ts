@@ -1,4 +1,4 @@
-import type { Route } from '@/commons/types/runroute';
+import type { Route } from '@/commons/types/routerun';
 
 export function dedupeRoutesById(routes: Route[]): Route[] {
   const deduped = new Map<string, Route>();

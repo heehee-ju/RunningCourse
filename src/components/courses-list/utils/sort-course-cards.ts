@@ -1,5 +1,5 @@
 // 홈 코스 목록 바텀시트용 — 카드 뷰를 정렬 모드에 맞게 재배열한다.
-import type { CourseCardView } from '@/commons/types/runroute';
+import type { CourseCardView } from '@/commons/types/routerun';
 import { pinToTopIfVisible } from '@/components/home/utils/course-filter';
 
 export type CourseListSortMode = 'distance' | 'likes';

@@ -4,7 +4,7 @@
 
 import { useCallback, useRef } from 'react';
 
-import type { Route } from '@/commons/types/runroute';
+import type { Route } from '@/commons/types/routerun';
 import { getDistanceCategory, type DistanceCategory } from '@/commons/utils/distance/category';
 import {
   getRunningCourseMarkerIconUrlForCategory,

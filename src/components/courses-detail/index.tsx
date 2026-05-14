@@ -24,7 +24,7 @@ import { Icon } from '@/commons/components/icons';
 import { ROUTES } from '@/commons/constants/url';
 import { Header } from '@/commons/layout/header';
 import { useToast } from '@/commons/providers/toast/toast.provider';
-import type { Route } from '@/commons/types/runroute';
+import type { Route } from '@/commons/types/routerun';
 import { formatDistanceKm as formatCourseDistanceKm } from '@/commons/utils/distance/format';
 import { filterNonemptyImageUrls } from '@/commons/utils/image/filter';
 import { getCourseDescriptionDisplay } from '@/commons/utils/text/display';

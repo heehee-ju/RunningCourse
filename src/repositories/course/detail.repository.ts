@@ -2,7 +2,7 @@
  * Course Detail Repository — 코스 상세 페이지 데이터 통신 전담
  * - Supabase로 `routes` 테이블에서 코스를 조회한다.
  */
-import type { Route } from '@/commons/types/runroute';
+import type { Route } from '@/commons/types/routerun';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 

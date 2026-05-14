@@ -1,7 +1,7 @@
 /**
  * Course Detail Service — 코스 상세 페이지에서 필요한 데이터를 조합한다.
  */
-import type { Route } from '@/commons/types/runroute';
+import type { Route } from '@/commons/types/routerun';
 import { createClient } from '@/lib/supabase/server';
 import * as courseDetailRepository from '@/repositories/course/detail.repository';
 import * as userRepository from '@/repositories/user.repository';

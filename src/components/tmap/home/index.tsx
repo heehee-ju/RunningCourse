@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Icon } from '@/commons/components/icons';
-import type { Route, RouteViewport } from '@/commons/types/runroute';
+import type { Route, RouteViewport } from '@/commons/types/routerun';
 import { bindMapEvents } from '@/commons/utils/tmap/events';
 import { getTmapv3Runtime } from '@/commons/utils/tmap/runtime';
 import type {

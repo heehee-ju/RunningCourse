@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import type { Route, RouteViewport } from '@/commons/types/runroute';
+import type { Route, RouteViewport } from '@/commons/types/routerun';
 import { fetchHomeRoutes } from '@/services/course/homeCourseService';
 
 type UseRoutesResult = {

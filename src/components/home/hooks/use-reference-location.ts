@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import type { ReferenceLocation } from '@/commons/types/runroute';
+import type { ReferenceLocation } from '@/commons/types/routerun';
 
 import { SEOUL_CITY_HALL_REFERENCE } from '../utils/course-filter';
 

@@ -4,7 +4,7 @@
 
 import { useCallback, useRef } from 'react';
 
-import type { Route } from '@/commons/types/runroute';
+import type { Route } from '@/commons/types/routerun';
 import {
   dedupeConsecutiveCoordinates,
   extractPathCoordinates,

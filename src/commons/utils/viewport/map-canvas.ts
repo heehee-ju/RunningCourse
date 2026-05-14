@@ -1,4 +1,4 @@
-import type { RouteViewport } from '@/commons/types/runroute';
+import type { RouteViewport } from '@/commons/types/routerun';
 
 type PixelLatLng = { lat: number; lng: number };
 

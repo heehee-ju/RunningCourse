@@ -1,4 +1,4 @@
-// types/runroute.ts
+// types/routerun.ts
 export interface UserProfile {
   id: string;
   email: string;

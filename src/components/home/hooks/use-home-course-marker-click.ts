@@ -2,7 +2,7 @@
 
 import { useCallback, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 
-import type { Route } from '@/commons/types/runroute';
+import type { Route } from '@/commons/types/routerun';
 
 type Params = {
   /** 접힘 상태에서 피크 시트를 열 때 기준 높이(px) — 이 값 이하면 피크 오픈 시그널 증가 */

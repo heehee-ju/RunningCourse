@@ -1,5 +1,5 @@
 // 홈 페이지 지도용 코스 데이터 통신 전담
-import type { Route, RouteViewport } from '@/commons/types/runroute';
+import type { Route, RouteViewport } from '@/commons/types/routerun';
 import { createClient } from '@/lib/supabase/client';
 
 type RouteRow = {

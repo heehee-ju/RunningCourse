@@ -2,7 +2,7 @@
 
 import { useEffect, type Dispatch, type SetStateAction } from 'react';
 
-import type { RouteViewport } from '@/commons/types/runroute';
+import type { RouteViewport } from '@/commons/types/routerun';
 import { isSameRouteViewport } from '@/commons/utils/viewport/route-viewport';
 
 /** 시트가 펼쳐지지 않을 때 보이는 뷰포트를 동결해 쿼리 bounds에 사용 */

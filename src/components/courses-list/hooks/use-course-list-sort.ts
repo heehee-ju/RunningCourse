@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 
-import type { CourseCardView } from '@/commons/types/runroute';
+import type { CourseCardView } from '@/commons/types/routerun';
 
 import { sortCourseCardsForDisplay, type CourseListSortMode } from '../utils/sort-course-cards';
 

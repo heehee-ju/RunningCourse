@@ -5,7 +5,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import type { Route } from '@/commons/types/runroute';
+import type { Route } from '@/commons/types/routerun';
 import { createClient } from '@/lib/supabase/server';
 import * as courseRepository from '@/repositories/course/course.repository';
 import { reverseGeocodeRegion } from '@/repositories/map.repository';

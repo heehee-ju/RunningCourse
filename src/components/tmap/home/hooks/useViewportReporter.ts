@@ -4,7 +4,7 @@
 
 import { useCallback, useRef } from 'react';
 
-import type { RouteViewport } from '@/commons/types/runroute';
+import type { RouteViewport } from '@/commons/types/routerun';
 import type { TmapLatLng, TmapMap } from '@/commons/utils/tmap/types';
 import { computeVisibleRouteViewportFromMapCanvas } from '@/commons/utils/viewport/map-canvas';
 

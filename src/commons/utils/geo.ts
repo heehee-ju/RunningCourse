@@ -1,4 +1,4 @@
-import type { ReferenceLocation, Route } from '@/commons/types/runroute';
+import type { ReferenceLocation, Route } from '@/commons/types/routerun';
 
 type Coordinate = {
   lat: number;

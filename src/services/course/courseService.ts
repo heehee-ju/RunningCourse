@@ -2,7 +2,7 @@
 // 데이터 가공, 권한 체크 등
 
 import type { MypageRouteCardData } from '@/commons/types/mypage';
-import type { Route } from '@/commons/types/runroute';
+import type { Route } from '@/commons/types/routerun';
 import * as courseRepository from '@/repositories/course/course.repository';
 import type {
   InsertRouteParams,

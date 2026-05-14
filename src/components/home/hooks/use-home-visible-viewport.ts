@@ -3,7 +3,7 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
 
 import { HOME_SESSION_KEYS } from '@/commons/constants/home';
-import type { RouteViewport } from '@/commons/types/runroute';
+import type { RouteViewport } from '@/commons/types/routerun';
 import { isSameRouteViewport, isValidRouteViewport } from '@/commons/utils/viewport/route-viewport';
 
 /** 지도에서 관측한 가시 뷰포트 상태 + sessionStorage 동기화 */

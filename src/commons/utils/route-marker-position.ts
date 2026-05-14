@@ -1,7 +1,7 @@
 /**
  * 홈 지도 마커 위치용 시작 좌표 — `path_data` 웨이포인트의 출발점을 DB `start_lat/lng`보다 우선한다.
  */
-import type { Route } from '@/commons/types/runroute';
+import type { Route } from '@/commons/types/routerun';
 import { normalizeRouteStartForTmapMarker } from '@/commons/utils/tmap-coordinate-normalize';
 
 function parseJsonIfString(value: unknown): unknown {

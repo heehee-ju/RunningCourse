@@ -10,7 +10,7 @@ import { ROUTES } from '@/commons/constants/url';
 import { useCourseLikes } from '@/commons/hooks/useCourseLikes';
 import { Header } from '@/commons/layout/header';
 import { Sidebar } from '@/commons/layout/sidebar';
-import type { Route, RouteViewport } from '@/commons/types/runroute';
+import type { Route, RouteViewport } from '@/commons/types/routerun';
 import { CoursesList } from '@/components/courses-list';
 import { TmapHome } from '@/components/tmap/home';
 

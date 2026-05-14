@@ -2,7 +2,7 @@
 
 import { useEffect, type Dispatch, type SetStateAction } from 'react';
 
-import type { Route } from '@/commons/types/runroute';
+import type { Route } from '@/commons/types/routerun';
 
 type SetSelectedRouteSnapshot = Dispatch<SetStateAction<Route | null>>;
 

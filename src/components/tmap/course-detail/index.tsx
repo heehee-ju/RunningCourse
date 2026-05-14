@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import type { Route } from '@/commons/types/runroute';
+import type { Route } from '@/commons/types/routerun';
 import type { TmapV3 } from '@/commons/types/tmap';
 import { getWaypointMarkerIconUrl } from '@/commons/utils/marker/waypoint-marker';
 import {

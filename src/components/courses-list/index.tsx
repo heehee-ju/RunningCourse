@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 
 import { Card } from '@/commons/components/card';
-import type { CourseCardView } from '@/commons/types/runroute';
+import type { CourseCardView } from '@/commons/types/routerun';
 
 import { CourseListSortDropdown } from './course-list-sort-dropdown';
 import { CoursesListSkeleton } from './courses-list-skeleton';
