@@ -281,7 +281,9 @@ export function TmapCourseDetail({ course, mapLabel }: TmapCourseDetailProps) {
       waypointMarkerModels.forEach((model) => {
         const markerOptions: Record<string, unknown> = {
           position: new Tmapv3.LatLng(model.lat, model.lng),
-          icon: getWaypointMarkerIconUrl(model.role, model.viaOrder),
+          icon: getWaypointMarkerIconUrl(model.role, model.viaOrder, {
+            isRoundTrip: course.is_round_trip,
+          }),
           map: mapInstance,
         };
 
@@ -355,6 +357,7 @@ export function TmapCourseDetail({ course, mapLabel }: TmapCourseDetailProps) {
     mapReady,
     course.start_lat,
     course.start_lng,
+    course.is_round_trip,
     lineCoordinates,
     savedRoutePoints,
     waypointMarkerModels,
