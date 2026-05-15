@@ -2,8 +2,8 @@ import Image from 'next/image';
 
 import { Button } from '@/commons/components/button';
 import { Icon } from '@/commons/components/icons';
-import { LogoIcon } from '@/commons/components/icons/logo';
-import { LOGO_SIZE_PRESETS } from '@/commons/components/icons/logo-presets';
+import { LogoIcon } from '@/commons/components/logo';
+import { LOGO_SIZE_PRESETS } from '@/commons/constants/logo-presets';
 
 import styles from './styles.module.css';
 

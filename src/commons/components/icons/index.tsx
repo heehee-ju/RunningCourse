@@ -116,7 +116,7 @@ export const Icon = ({
 
 export default Icon;
 
-export { LogoIcon } from './logo';
+export { LogoIcon } from '../logo';
 
 import type { LucideIcon } from 'lucide-react';
 

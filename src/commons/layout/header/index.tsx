@@ -12,7 +12,7 @@
 
 import { Icon, LogoIcon } from '@/commons/components/icons';
 import type { IconName } from '@/commons/components/icons';
-import { LOGO_SIZE_PRESETS } from '@/commons/components/icons/logo-presets';
+import { LOGO_SIZE_PRESETS } from '@/commons/constants/logo-presets';
 
 import styles from './styles.module.css';
 

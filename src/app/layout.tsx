@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: '루트런',
       locale: 'ko_KR',
       type: 'website',
-      images: [{ url: `${baseUrl}/assets/icons/rr-logo.png`, alt: '루트런 로고' }],
+      images: [{ url: `${baseUrl}/assets/logo/rr-logo.png`, alt: '루트런 로고' }],
     },
     icons: {
       icon: [

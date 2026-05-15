@@ -16,8 +16,8 @@
 
 import { Button } from '@/commons/components/button';
 import { LogoIcon } from '@/commons/components/icons';
-import { LOGO_SIZE_PRESETS } from '@/commons/components/icons/logo-presets';
 import { Spinner } from '@/commons/components/spinner';
+import { LOGO_SIZE_PRESETS } from '@/commons/constants/logo-presets';
 
 import { useAnonymousLogin } from './hooks/index.anonymous.login.hook';
 import { useGoogleLogin } from './hooks/index.google.login.hook';
