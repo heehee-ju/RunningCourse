@@ -17,9 +17,12 @@ import {
   MapPin,
   Menu,
   Minus,
+  MoveUpRight,
   Pencil,
   Plus,
+  Repeat,
   RotateCcw,
+  Ruler,
   Save,
   Scan,
   Share2,
@@ -65,6 +68,9 @@ const iconRegistry = {
   logOut: LogOut,
   sportShoe: Footprints,
   'undo-2': Undo2,
+  'move-up-right': MoveUpRight,
+  repeat: Repeat,
+  ruler: Ruler,
   x: X,
 } as const;
 
