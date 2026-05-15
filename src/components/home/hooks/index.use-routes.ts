@@ -33,9 +33,7 @@ export function useRoutes(viewport: RouteViewport | null): UseRoutesResult {
   useEffect(() => {
     let isMounted = true;
     if (!viewport) {
-      setAllRoutes([]);
-      setIsLoading(false);
-      setErrorMessage(null);
+      // 바텀시트 제스처 등으로 뷰포트가 잠깐 비는 동안 기존 조회 결과를 유지한다.
       return () => {
         isMounted = false;
       };

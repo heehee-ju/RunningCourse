@@ -41,6 +41,8 @@
   width: 100%;
   max-width: 769px;
   height: 100%;
+  /* 패널 translate 시 컬럼 밖(회색 여백)으로 잠깐 비치지 않도록 */
+  overflow: hidden;
 }
 
 .backdrop {
@@ -56,7 +58,7 @@
 }
 
 .panel {
-  position: fixed;
+  position: absolute;
   top: 0;
   right: 0;
   bottom: 0;

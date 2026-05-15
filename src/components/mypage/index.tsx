@@ -131,7 +131,7 @@ export default function Mypage({ profile, myRoutes, likedRoutes }: MypageProps) 
       <section className={styles.profileSection} aria-label="프로필">
         <div className={styles.profileInfo}>
           <div className={styles.avatar} aria-hidden="true">
-            <Icon name="userRound" size={32} color="var(--color-white-500)" strokeWidth={1.5} />
+            <Icon name="userRound" size={32} color="var(--color-white-500)" />
           </div>
           <span className={styles.userName}>{profile.nickname}</span>
         </div>

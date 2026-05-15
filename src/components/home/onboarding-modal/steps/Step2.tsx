@@ -29,7 +29,7 @@ export function Step2({ onNext, onPrev }: Props) {
       <div className={styles.step2ImageArea}>
         <div className={styles.step2ImageBg}>
           <Image
-            src="/images/onboarding-step2.png"
+            src="/assets/images/onboarding/onboarding-step2.png"
             alt=""
             fill
             sizes="(max-width: 360px) 100vw, 320px"

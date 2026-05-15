@@ -75,7 +75,7 @@ export function Step3({ onPrev, onClose }: Props) {
 
           <div className={styles.guideImageWrap}>
             <Image
-              src="/images/onboarding3.png"
+              src="/assets/images/onboarding/onboarding3.png"
               alt=""
               width={173}
               height={392}

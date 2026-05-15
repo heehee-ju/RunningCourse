@@ -100,7 +100,7 @@ export function CourseListSortDropdown({ sortMode, onSelect }: CourseListSortDro
                 <span className={styles.sortDropdownOptionLabel}>{option.label}</span>
                 {sortMode === option.value ? (
                   <span className={styles.sortDropdownCheck} aria-hidden>
-                    <Icon name="check" size={14} strokeWidth={2} />
+                    <Icon name="check" size={14} />
                   </span>
                 ) : null}
               </button>

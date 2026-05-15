@@ -185,18 +185,20 @@ export function useCoursesListBottomSheet({
     };
   }, [liveTranslateY]);
 
-  // 부모에게는 사용자 의도(sheetState) 기준 상태/높이를 보고한다.
-  // isEmpty로 인한 자동 collapse는 시각적으로만 적용되며,
-  // 지도 가시 뷰포트가 시트 자동 변동에 흔들려 routes ↔ 시트 상태가 무한 루프되는 것을 방지한다.
+  // 부모(홈·지도)로 보내는 높이를 두 갈래로 나눈다.
+  // - visibleHeight: 코스 조회·가시 뷰포트·마커용 → 스냅된 시트 단계만 반영(드래그 중 손댐 제외).
+  //   천천히 드래그할 때 오버레이 px가 커지며 뷰포트가 줄어들고 마커가 사라지는 현상을 막는다.
+  // - visualVisibleHeight: 플로팅 버튼 배치 등 UI용 → 실제 화면 위치(liveTranslateY) 그대로.
+  // isEmpty 자동 접힘은 effectiveSheetState·liveTranslateY 쪽에서만 반영한다.
   useEffect(() => {
-    const reportedTranslateY = computeSheetTranslateY({
+    const queryTranslateY = computeSheetTranslateY({
       effectiveSheetState: sheetState,
       effectiveSheetHeight,
-      isDragging,
-      dragOffsetY,
+      isDragging: false,
+      dragOffsetY: 0,
       peekVisibleHeight: PEEK_VISIBLE_HEIGHT,
     });
-    const reportedVisibleHeight = Math.max(24, effectiveSheetHeight - reportedTranslateY);
+    const reportedVisibleHeight = Math.max(24, effectiveSheetHeight - queryTranslateY);
     const visualVisibleHeight = Math.max(24, effectiveSheetHeight - liveTranslateY);
 
     onSheetPositionChange?.({
@@ -204,14 +206,7 @@ export function useCoursesListBottomSheet({
       visibleHeight: roundUpToEven(reportedVisibleHeight),
       visualVisibleHeight: roundUpToEven(visualVisibleHeight),
     });
-  }, [
-    effectiveSheetHeight,
-    liveTranslateY,
-    sheetState,
-    isDragging,
-    dragOffsetY,
-    onSheetPositionChange,
-  ]);
+  }, [effectiveSheetHeight, liveTranslateY, sheetState, onSheetPositionChange]);
 
   const handlePanStart = () => {
     if (isSheetInteractionLocked) return;

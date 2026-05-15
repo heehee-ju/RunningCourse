@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: CourseDetailPageProps): Promi
   const distanceKm = (course.distance_meters / 1000).toFixed(1);
   const description = course.description?.trim() || `${location} 근처의 ${distanceKm}km 러닝 코스`;
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
-  const ogImage = course.image_urls[0] ?? `${baseUrl}/icons/rr-logo.png`;
+  const ogImage = course.image_urls[0] ?? `${baseUrl}/assets/logo/rr-logo.png`;
 
   return {
     title: `${course.title} | 루트런`,

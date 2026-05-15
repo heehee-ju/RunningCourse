@@ -9,7 +9,7 @@ type LogoIconProps = {
 export function LogoIcon({ width = 44, height = 38, className }: LogoIconProps) {
   return (
     <Image
-      src="/logo/logo.svg"
+      src="/assets/logo/logo.svg"
       alt="RouteRun 로고"
       width={width}
       height={height}

@@ -54,8 +54,9 @@ export function Home() {
   );
   const referenceLocation = useReferenceLocation();
 
+  // 펼침 직후 frozen이 아직 없을 때(드래그 등) null로 코스가 비지 않도록 visible로 이어 붙임
   const effectiveQueryViewport = isSheetExpanded
-    ? frozenVisibleRouteViewport
+    ? (frozenVisibleRouteViewport ?? visibleRouteViewport)
     : visibleRouteViewport;
   const { routes, allRoutes, isLoading, errorMessage } = useRoutes(effectiveQueryViewport);
   const router = useRouter();
@@ -206,7 +207,7 @@ export function Home() {
           <div className={styles.noCourseToastLayer} aria-live="polite">
             <div className={styles.noCourseToast}>
               <span className={styles.noCourseToastIcon}>
-                <Icon name="circleAlert" size={16} strokeWidth={2} />
+                <Icon name="circleAlert" size={16} />
               </span>
               <span>{homeToast.message}</span>
             </div>

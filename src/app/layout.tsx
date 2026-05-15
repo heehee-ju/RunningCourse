@@ -11,39 +11,41 @@ import './globals.css';
 
 export const dynamic = 'force-dynamic';
 
-// 아이콘 에셋은 public/logo/ 에서 중앙 관리하며 metadata.icons로 명시한다.
-export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
-  title: '루트런 | 내 주변 러닝 코스',
-  description: '전국의 러닝 코스를 찾고, 나만의 경로를 기록하여 러너들과 공유해보세요.',
-  applicationName: '루트런',
-  openGraph: {
+// 아이콘 에셋은 public/assets/logo/ 에서 중앙 관리하며 metadata.icons로 명시한다.
+export async function generateMetadata(): Promise<Metadata> {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+  return {
+    metadataBase: new URL(baseUrl),
     title: '루트런 | 내 주변 러닝 코스',
     description: '전국의 러닝 코스를 찾고, 나만의 경로를 기록하여 러너들과 공유해보세요.',
-    siteName: '루트런',
-    locale: 'ko_KR',
-    type: 'website',
-    images: [{ url: 'https://routerun.co.kr/icons/rr-logo.png', alt: '루트런 로고' }],
-  },
-  icons: {
-    icon: [
-      { url: '/logo/favicon.ico' },
-      { url: '/logo/icon.svg', type: 'image/svg+xml' },
-      { url: '/logo/icon.png', sizes: '96x96', type: 'image/png' },
-      { url: '/logo/favicon16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/logo/favicon32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/logo/favicon48.png', sizes: '48x48', type: 'image/png' },
-      { url: '/logo/favicon64.png', sizes: '64x64', type: 'image/png' },
-    ],
-    shortcut: [{ url: '/logo/favicon.ico' }],
-    apple: [{ url: '/logo/apple-icon.png', sizes: '180x180', type: 'image/png' }],
-  },
-  appleWebApp: {
-    capable: true,
-    title: '루트런',
-    statusBarStyle: 'default',
-  },
-};
+    applicationName: '루트런',
+    openGraph: {
+      title: '루트런 | 내 주변 러닝 코스',
+      description: '전국의 러닝 코스를 찾고, 나만의 경로를 기록하여 러너들과 공유해보세요.',
+      siteName: '루트런',
+      locale: 'ko_KR',
+      type: 'website',
+      images: [{ url: `${baseUrl}/assets/logo/rr-logo.png`, alt: '루트런 로고' }],
+    },
+    icons: {
+      icon: [
+        { url: '/assets/logo/favicon.ico' },
+        { url: '/assets/logo/logo.svg', type: 'image/svg+xml' },
+        { url: '/assets/logo/favicon/favicon16.png', sizes: '16x16', type: 'image/png' },
+        { url: '/assets/logo/favicon/favicon32.png', sizes: '32x32', type: 'image/png' },
+        { url: '/assets/logo/favicon/favicon48.png', sizes: '48x48', type: 'image/png' },
+        { url: '/assets/logo/favicon/favicon64.png', sizes: '64x64', type: 'image/png' },
+      ],
+      shortcut: [{ url: '/assets/logo/favicon.ico' }],
+      apple: [{ url: '/assets/logo/apple-icon.png', sizes: '180x180', type: 'image/png' }],
+    },
+    appleWebApp: {
+      capable: true,
+      title: '루트런',
+      statusBarStyle: 'default',
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: [
