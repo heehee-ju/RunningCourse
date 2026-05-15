@@ -34,11 +34,7 @@ export const Toast = ({ state, message }: ToastProps) => {
     <div className={`${styles.toast} ${styles[state]}`} role="status" aria-live="polite">
       <div className={styles.inner}>
         <span className={styles.iconWrapper}>
-          <Icon
-            name={state === 'success' ? 'circleCheckBig' : 'circleAlert'}
-            size={16}
-            strokeWidth={2}
-          />
+          <Icon name={state === 'success' ? 'circleCheckBig' : 'circleAlert'} size={16} />
         </span>
         <span className={styles.text}>{message ?? TOAST_TEXT[state]}</span>
       </div>

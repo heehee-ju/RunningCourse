@@ -1,6 +1,3 @@
-/**
- * 페이지/컨텍스트별 로고 기본 크기 preset 모음.
- */
 export const LOGO_SIZE_PRESETS = {
   login: {
     width: 112,

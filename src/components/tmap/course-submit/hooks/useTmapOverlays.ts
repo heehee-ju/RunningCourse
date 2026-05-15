@@ -1,17 +1,12 @@
 import { useCallback, useRef } from 'react';
 
 import type { TmapCoordinate, TmapMapLike, TmapMarkerLike, TmapV3 } from '@/commons/types/tmap';
-import { getWaypointMarkerIconUrl } from '@/commons/utils/marker/waypoint-marker';
+import { getCourseSubmitMarkerIconUrl } from '@/commons/utils/marker/waypoint-marker';
 import { getTmapv3Runtime } from '@/commons/utils/tmap/runtime';
 
 import type { RefObject } from 'react';
 
-type MarkerRole = 'start' | 'via' | 'end';
-
-export function useTmapOverlays(
-  mapRef: RefObject<TmapMapLike | null>,
-  isRoundTripRef: RefObject<boolean>,
-) {
+export function useTmapOverlays(mapRef: RefObject<TmapMapLike | null>) {
   const markerRefs = useRef<TmapMarkerLike[]>([]);
   const polylineRef = useRef<{ setMap: (map: TmapMapLike | null) => void } | null>(null);
 
@@ -29,25 +24,16 @@ export function useTmapOverlays(
       clearMarkers();
 
       nextPoints.forEach((point, index) => {
-        const isStart = index === 0;
-        const isEnd = nextPoints.length >= 2 && index === nextPoints.length - 1;
-        const role: MarkerRole = isStart ? 'start' : isEnd ? 'end' : 'via';
-        const viaOrder = !isStart && !isEnd ? index : undefined;
-
-        const iconUrl = getWaypointMarkerIconUrl(role, viaOrder, {
-          isRoundTrip: isRoundTripRef.current,
-        });
-
         const marker = new Tmapv3.Marker({
           // Tmap 공식 예제와 동일하게 LatLng(lat, lon) 순서로 변환한다.
           position: new Tmapv3.LatLng(point.lat, point.lng),
-          icon: iconUrl,
+          icon: getCourseSubmitMarkerIconUrl(index),
           map,
         });
         markerRefs.current.push(marker);
       });
     },
-    [clearMarkers, mapRef, isRoundTripRef],
+    [clearMarkers, mapRef],
   );
 
   const clearPolyline = useCallback(() => {

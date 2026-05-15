@@ -15,6 +15,7 @@ type RouteRow = {
   path_data: Record<string, unknown> | null;
   start_lat: number | null;
   start_lng: number | null;
+  start_address_region: string | null;
   image_urls: string[] | null;
   likes_count: number | null;
   is_round_trip: boolean | null;
@@ -22,7 +23,7 @@ type RouteRow = {
 };
 
 const ROUTE_SELECT =
-  'id, user_id, title, description, distance_meters, path_data, start_lat, start_lng, image_urls, likes_count, is_round_trip, created_at';
+  'id, user_id, title, description, distance_meters, path_data, start_lat, start_lng, start_address_region, image_urls, likes_count, is_round_trip, created_at';
 
 function toRoute(row: RouteRow | null): Route | null {
   if (!row) return null;
@@ -48,6 +49,7 @@ function toRoute(row: RouteRow | null): Route | null {
     path_data: row.path_data ?? {},
     start_lat: row.start_lat,
     start_lng: row.start_lng,
+    start_address_region: row.start_address_region ?? null,
     image_urls: row.image_urls ?? [],
     likes_count: row.likes_count ?? 0,
     is_round_trip: row.is_round_trip ?? false,

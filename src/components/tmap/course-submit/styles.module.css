@@ -16,107 +16,270 @@
   cursor: default !important;
 }
 
-.topRight {
+/* ── 우측 상단 컨트롤 버튼 그룹 ── */
+
+.topRightControls {
   position: absolute;
   top: 12px;
   right: 12px;
   z-index: 5;
   display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.controlButton {
+  display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-}
-
-.topInfoPanel {
-  background: rgba(17, 24, 39, 0.72);
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 48px;
+  height: 48px;
   border-radius: 12px;
-  padding: 9px 12px;
+  background: #f3f3f3;
+  border: none;
+  cursor: pointer;
+  color: #0a0a0a;
+  transition: background 120ms;
 }
 
-.bottomPanel {
+.controlButton:hover:not(:disabled) {
+  background: #e8e8e8;
+}
+
+.controlButton:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.controlButtonLabel {
+  font-size: 10px;
+  line-height: 1;
+  color: #0a0a0a;
+  white-space: nowrap;
+}
+
+.locationButton {
   position: absolute;
   left: 12px;
-  right: 12px;
-  bottom: 16px;
+  bottom: calc(76px + 12px);
+  z-index: 5;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 8px;
-  border-radius: 14px;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.75);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  color: #0a0a0a;
+  transition: background 120ms;
+}
+
+.locationButton:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* ── 하단 바 ── */
+
+.bottomBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 76px;
+  display: flex;
+  align-items: stretch;
+  background: #fafafa;
+  border-radius: 10px 10px 0 0;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.08);
   z-index: 5;
 }
 
-.distanceText {
-  margin: 0;
-  color: #ffffff;
-  font-size: 13px;
-  line-height: 16px;
-  white-space: nowrap;
+.section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 17px 4px;
 }
 
-.waypointText {
-  margin: 4px 0 0;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 12px;
-  line-height: 16px;
-  white-space: nowrap;
-}
-
-.waypointTextFull {
-  margin: 4px 0 0;
-  color: #fca5a5;
-  font-size: 12px;
-  line-height: 16px;
-  white-space: nowrap;
-}
-
-.roundTripLabel {
+.sectionHeader {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 10px;
-  border-radius: 12px;
-  background: rgba(17, 24, 39, 0.72);
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 12px;
-  line-height: 16px;
-  cursor: pointer;
-  user-select: none;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #7d7d7d;
+  white-space: nowrap;
 }
 
-.roundTripCheckbox {
-  appearance: none;
-  -webkit-appearance: none;
+.infoIconWrapper {
   position: relative;
-  width: 15px;
-  height: 15px;
-  border: 1.5px solid rgba(255, 255, 255, 0.5);
-  border-radius: 3px;
-  background: transparent;
-  cursor: pointer;
+  display: flex;
+  align-items: center;
+  cursor: default;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-20%);
+  background: rgba(17, 24, 39, 0.88);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.6;
+  padding: 7px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 150ms;
+  z-index: 10;
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 20%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(17, 24, 39, 0.88);
+}
+
+.infoIconWrapper:hover .tooltip {
+  opacity: 1;
+}
+
+.divider {
+  width: 1px;
+  height: 48px;
+  align-self: center;
+  background: #e4e4e4;
   flex-shrink: 0;
-  transition: border-color 120ms, background 120ms;
 }
 
-.roundTripCheckbox:hover {
-  border-color: rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.1);
+/* ── 왕복 설정 토글 ── */
+
+.toggle {
+  display: flex;
+  gap: 2px;
 }
 
-.roundTripCheckbox:checked {
-  border-color: rgba(255, 255, 255, 0.85);
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpolyline points='2,6 5,9 10,3' fill='none' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C%2Fsvg%3E") center / 10px no-repeat transparent;
+.toggleOption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5px 6px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  font-size: 9px;
+  line-height: 1.5;
+  cursor: pointer;
+  background: transparent;
+  transition: background 120ms, border-color 120ms, color 120ms;
 }
 
-.roundTripCheckbox:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.7);
-  outline-offset: 1px;
+.toggleOptionActive {
+  border-color: #63ac7d;
+  background: #e8f3ec;
+  color: #606060;
 }
 
-.errorText {
-  margin: 4px 0 0;
+.toggleOptionInactive {
+  color: #bababa;
+}
+
+/* ── 경로 지점 ── */
+
+.countDisplay {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.countNumber {
+  font-size: 16px;
+  font-weight: 600;
+  color: #696969;
+  line-height: 1;
+}
+
+.countNumberFull {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fca5a5;
+  line-height: 1;
+}
+
+.countDivider {
   font-size: 12px;
-  line-height: 1.4;
-  color: #fecaca;
+  color: #9b9b9b;
+  line-height: 1;
+}
+
+/* ── 총 거리 ── */
+
+.distanceDisplay {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.distanceValue {
+  font-size: 16px;
+  font-weight: 600;
+  color: #696969;
+  line-height: 1;
+}
+
+.distanceUnit {
+  font-size: 11px;
+  color: #9b9b9b;
+  line-height: 1;
+}
+
+/* ── 코스 저장 버튼 ── */
+
+.saveSection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+.saveButton {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 13px;
+  border-radius: 7px;
+  border: 1px solid #b2b2b2;
+  background: #e4e4e4;
+  font-size: 11px;
+  color: #b2b2b2;
+  cursor: default;
+  white-space: nowrap;
+  transition: background 120ms, border-color 120ms, color 120ms;
+}
+
+.saveButtonActive {
+  border-color: #147738;
+  background: #16833d;
+  color: #fafafa;
+  cursor: pointer;
+}
+
+.saveButtonActive:hover {
+  background: #147738;
 }
