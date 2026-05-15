@@ -24,10 +24,12 @@ export function useTmapOverlays(mapRef: RefObject<TmapMapLike | null>) {
       clearMarkers();
 
       nextPoints.forEach((point, index) => {
+        const iconUrl = getCourseSubmitMarkerIconUrl(index);
+
         const marker = new Tmapv3.Marker({
           // Tmap 공식 예제와 동일하게 LatLng(lat, lon) 순서로 변환한다.
           position: new Tmapv3.LatLng(point.lat, point.lng),
-          icon: getCourseSubmitMarkerIconUrl(index),
+          icon: iconUrl,
           map,
         });
         markerRefs.current.push(marker);
