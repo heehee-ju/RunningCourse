@@ -63,12 +63,13 @@ export function Home() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const { homeToast, handleZoomLimitReached, handleZoomLimitCleared } = useHomeToast({
-    mapMoveSignal,
-    routesLength: routes.length,
-    isLoading,
-    errorMessage,
-  });
+  const { homeToast, isHomeToastFadingOut, handleZoomLimitReached, handleZoomLimitCleared } =
+    useHomeToast({
+      mapMoveSignal,
+      routesLength: routes.length,
+      isLoading,
+      errorMessage,
+    });
 
   const handleMapDragSettled = useCallback(() => {
     setMapMoveSignal((previous) => previous + 1);
@@ -204,7 +205,16 @@ export function Home() {
           />
         </div>
         {homeToast ? (
-          <div className={styles.noCourseToastLayer} aria-live="polite">
+          <div
+            className={[
+              styles.noCourseToastLayer,
+              !isHomeToastFadingOut ? styles.noCourseToastLayerEnter : '',
+              isHomeToastFadingOut ? styles.noCourseToastLayerLeaving : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            aria-live="polite"
+          >
             <div className={styles.noCourseToast}>
               <span className={styles.noCourseToastIcon}>
                 <Icon name="circleAlert" size={16} />

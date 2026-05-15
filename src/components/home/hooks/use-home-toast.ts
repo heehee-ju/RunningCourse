@@ -15,8 +15,9 @@ type UseHomeToastParams = {
 };
 
 const HOME_TOAST_AUTO_HIDE_MS = 1500;
+const HOME_TOAST_FADE_OUT_MS = 180;
 
-/** 홈 토스트(줌 한도·해당 영역 무코스) 표시·1.5초 자동 숨김 및 타이머 정리 */
+/** 홈 토스트(줌 한도·해당 영역 무코스) 표시·자동 숨김(페이드아웃) 및 타이머 정리 */
 export function useHomeToast({
   mapMoveSignal,
   routesLength,
@@ -24,35 +25,40 @@ export function useHomeToast({
   errorMessage,
 }: UseHomeToastParams) {
   const [homeToast, setHomeToast] = useState<HomeToast | null>(null);
+  const [isHomeToastFadingOut, setIsHomeToastFadingOut] = useState(false);
   const noCourseToastDelayTimerRef = useRef<number | null>(null);
-  const noCourseToastHideTimerRef = useRef<number | null>(null);
-  const zoomLimitToastHideTimerRef = useRef<number | null>(null);
+  const toastDismissPhase1TimerRef = useRef<number | null>(null);
+  const toastDismissPhase2TimerRef = useRef<number | null>(null);
 
-  const showHomeToast = useCallback((type: HomeToast['type'], message: string) => {
-    setHomeToast({ type, message });
-
-    if (noCourseToastHideTimerRef.current !== null) {
-      window.clearTimeout(noCourseToastHideTimerRef.current);
-      noCourseToastHideTimerRef.current = null;
+  const clearToastDismissTimers = useCallback(() => {
+    if (toastDismissPhase1TimerRef.current !== null) {
+      window.clearTimeout(toastDismissPhase1TimerRef.current);
+      toastDismissPhase1TimerRef.current = null;
     }
-    if (zoomLimitToastHideTimerRef.current !== null) {
-      window.clearTimeout(zoomLimitToastHideTimerRef.current);
-      zoomLimitToastHideTimerRef.current = null;
+    if (toastDismissPhase2TimerRef.current !== null) {
+      window.clearTimeout(toastDismissPhase2TimerRef.current);
+      toastDismissPhase2TimerRef.current = null;
     }
-
-    if (type === 'zoom-limit') {
-      zoomLimitToastHideTimerRef.current = window.setTimeout(() => {
-        setHomeToast((previous) => (previous?.type === 'zoom-limit' ? null : previous));
-        zoomLimitToastHideTimerRef.current = null;
-      }, HOME_TOAST_AUTO_HIDE_MS);
-      return;
-    }
-
-    noCourseToastHideTimerRef.current = window.setTimeout(() => {
-      setHomeToast((previous) => (previous?.type === 'no-course' ? null : previous));
-      noCourseToastHideTimerRef.current = null;
-    }, HOME_TOAST_AUTO_HIDE_MS);
   }, []);
+
+  const showHomeToast = useCallback(
+    (type: HomeToast['type'], message: string) => {
+      clearToastDismissTimers();
+      setIsHomeToastFadingOut(false);
+      setHomeToast({ type, message });
+
+      toastDismissPhase1TimerRef.current = window.setTimeout(() => {
+        setIsHomeToastFadingOut(true);
+        toastDismissPhase2TimerRef.current = window.setTimeout(() => {
+          setHomeToast((previous) => (previous?.type === type ? null : previous));
+          setIsHomeToastFadingOut(false);
+          toastDismissPhase2TimerRef.current = null;
+        }, HOME_TOAST_FADE_OUT_MS);
+        toastDismissPhase1TimerRef.current = null;
+      }, HOME_TOAST_AUTO_HIDE_MS);
+    },
+    [clearToastDismissTimers],
+  );
 
   const handleZoomLimitReached = useCallback(
     (limit: 'min' | 'max') => {
@@ -66,12 +72,10 @@ export function useHomeToast({
   );
 
   const handleZoomLimitCleared = useCallback(() => {
-    if (zoomLimitToastHideTimerRef.current !== null) {
-      window.clearTimeout(zoomLimitToastHideTimerRef.current);
-      zoomLimitToastHideTimerRef.current = null;
-    }
+    clearToastDismissTimers();
+    setIsHomeToastFadingOut(false);
     setHomeToast((previous) => (previous?.type === 'zoom-limit' ? null : previous));
-  }, []);
+  }, [clearToastDismissTimers]);
 
   useEffect(() => {
     if (noCourseToastDelayTimerRef.current !== null) {
@@ -80,18 +84,14 @@ export function useHomeToast({
     }
 
     if (isLoading || !!errorMessage) {
-      if (noCourseToastHideTimerRef.current !== null) {
-        window.clearTimeout(noCourseToastHideTimerRef.current);
-        noCourseToastHideTimerRef.current = null;
-      }
+      clearToastDismissTimers();
+      setIsHomeToastFadingOut(false);
       setHomeToast((previous) => (previous?.type === 'no-course' ? null : previous));
       return;
     }
     if (routesLength > 0) {
-      if (noCourseToastHideTimerRef.current !== null) {
-        window.clearTimeout(noCourseToastHideTimerRef.current);
-        noCourseToastHideTimerRef.current = null;
-      }
+      clearToastDismissTimers();
+      setIsHomeToastFadingOut(false);
       setHomeToast((previous) => (previous?.type === 'no-course' ? null : previous));
       return;
     }
@@ -107,24 +107,27 @@ export function useHomeToast({
         noCourseToastDelayTimerRef.current = null;
       }
     };
-  }, [errorMessage, isLoading, mapMoveSignal, routesLength, showHomeToast]);
+  }, [
+    clearToastDismissTimers,
+    errorMessage,
+    isLoading,
+    mapMoveSignal,
+    routesLength,
+    showHomeToast,
+  ]);
 
   useEffect(() => {
     return () => {
       if (noCourseToastDelayTimerRef.current !== null) {
         window.clearTimeout(noCourseToastDelayTimerRef.current);
       }
-      if (noCourseToastHideTimerRef.current !== null) {
-        window.clearTimeout(noCourseToastHideTimerRef.current);
-      }
-      if (zoomLimitToastHideTimerRef.current !== null) {
-        window.clearTimeout(zoomLimitToastHideTimerRef.current);
-      }
+      clearToastDismissTimers();
     };
-  }, []);
+  }, [clearToastDismissTimers]);
 
   return {
     homeToast,
+    isHomeToastFadingOut,
     showHomeToast,
     handleZoomLimitReached,
     handleZoomLimitCleared,

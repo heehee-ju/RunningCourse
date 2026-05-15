@@ -73,7 +73,16 @@
   z-index: 20;
   transform: translateX(-50%);
   pointer-events: none;
-  animation: homeToastLayerFadeIn 180ms ease-out;
+  opacity: 1;
+}
+
+.noCourseToastLayerEnter {
+  animation: homeToastLayerFadeIn 180ms ease-out forwards;
+}
+
+/* 퇴장: 한 프레임에 opacity:0 고정 금지 → 1→0 키프레임으로만 페이드 */
+.noCourseToastLayerLeaving {
+  animation: homeToastLayerFadeOut 280ms ease-out forwards;
 }
 
 .noCourseToast {
@@ -110,6 +119,15 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes homeToastLayerFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 
