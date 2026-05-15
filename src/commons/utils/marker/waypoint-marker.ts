@@ -41,3 +41,10 @@ export function getWaypointMarkerIconUrl(
 export function getWaypointMarkerTitle(role: WaypointMarkerRole): string {
   return markerTitleByRole(role);
 }
+
+const COURSE_SUBMIT_POINTER_MAX = 7;
+
+export function getCourseSubmitMarkerIconUrl(pointIndex: number): string {
+  const n = Math.min(Math.max(Math.trunc(pointIndex) + 1, 1), COURSE_SUBMIT_POINTER_MAX);
+  return `/assets/icons/courses-point/pointer${String(n)}.png`;
+}

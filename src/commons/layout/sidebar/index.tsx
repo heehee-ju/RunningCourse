@@ -87,7 +87,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               tabIndex={open ? 0 : -1}
               onClick={onClose}
             >
-              <Icon name="x" size={24} strokeWidth={2} />
+              <Icon name="x" size={24} />
             </button>
           </div>
           <nav className={styles.nav} aria-label={COPY.dialogLabel}>

@@ -33,7 +33,7 @@ export function NavigationItem(props: NavigationItemProps) {
   const content = (
     <span className={styles.inner}>
       <span className={styles.iconWrap} aria-hidden>
-        <Icon name={icon} size={24} strokeWidth={1} className={styles.icon} />
+        <Icon name={icon} size={24} className={styles.icon} />
       </span>
       <span className={styles.label}>{label}</span>
     </span>

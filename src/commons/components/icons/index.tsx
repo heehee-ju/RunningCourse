@@ -17,9 +17,12 @@ import {
   MapPin,
   Menu,
   Minus,
+  MoveUpRight,
   Pencil,
   Plus,
+  Repeat,
   RotateCcw,
+  Ruler,
   Save,
   Scan,
   Share2,
@@ -65,6 +68,9 @@ const iconRegistry = {
   logOut: LogOut,
   sportShoe: Footprints,
   'undo-2': Undo2,
+  'move-up-right': MoveUpRight,
+  repeat: Repeat,
+  ruler: Ruler,
   x: X,
 } as const;
 
@@ -82,7 +88,7 @@ export const Icon = ({
   name,
   size = 24,
   color = 'currentColor',
-  strokeWidth = 2,
+  strokeWidth = 1.5,
   className,
 }: IconProps) => {
   const LucideComponent = iconRegistry[name];
@@ -110,7 +116,7 @@ export const Icon = ({
 
 export default Icon;
 
-export { LogoIcon } from './logo';
+export { LogoIcon } from '../logo';
 
 import type { LucideIcon } from 'lucide-react';
 
@@ -126,7 +132,7 @@ export function FieldLucideIcon({
   icon: LucideComponent,
   size = 16,
   color = 'currentColor',
-  strokeWidth = 2,
+  strokeWidth = 1.5,
   className,
 }: FieldLucideIconProps) {
   return (
@@ -183,7 +189,7 @@ export function getIconSvgMarkup({
   name,
   size = 24,
   color = 'currentColor',
-  strokeWidth = 2,
+  strokeWidth = 1.5,
   className,
 }: IconSvgMarkupOptions) {
   const iconComponent = iconRegistry[name] as LucideIconWithNode;

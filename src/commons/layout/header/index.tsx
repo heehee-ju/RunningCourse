@@ -12,7 +12,7 @@
 
 import { Icon, LogoIcon } from '@/commons/components/icons';
 import type { IconName } from '@/commons/components/icons';
-import { LOGO_SIZE_PRESETS } from '@/commons/components/icons/logo-presets';
+import { LOGO_SIZE_PRESETS } from '@/commons/constants/logo-presets';
 
 import styles from './styles.module.css';
 
@@ -66,7 +66,7 @@ export function Header({
             aria-label={COPY.leftIconAriaLabel}
             onClick={onLeftIconClick}
           >
-            <Icon name={leftIconName} size={24} strokeWidth={2} />
+            <Icon name={leftIconName} size={24} />
           </button>
         ) : null}
         <h1 className={styles.title}>{title}</h1>
@@ -77,7 +77,7 @@ export function Header({
             aria-label={rightIconAriaLabel ?? COPY.rightIconAriaLabel}
             onClick={onRightIconClick}
           >
-            <Icon name={rightIconName} size={24} strokeWidth={2} />
+            <Icon name={rightIconName} size={24} />
           </button>
         ) : (
           <span className={styles.iconPlaceholder} aria-hidden />

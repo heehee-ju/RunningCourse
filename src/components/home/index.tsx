@@ -217,7 +217,7 @@ export function Home() {
           >
             <div className={styles.noCourseToast}>
               <span className={styles.noCourseToastIcon}>
-                <Icon name="circleAlert" size={16} strokeWidth={2} />
+                <Icon name="circleAlert" size={16} />
               </span>
               <span>{homeToast.message}</span>
             </div>

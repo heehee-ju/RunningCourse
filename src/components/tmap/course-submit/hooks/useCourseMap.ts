@@ -27,7 +27,6 @@ type UseCourseMapParams = {
 export function useCourseMap({ onSaveRoute }: UseCourseMapParams = {}) {
   const [points, setPoints] = useState<TmapCoordinate[]>([]);
   const [rawDistanceKm, setRawDistanceKm] = useState<number | null>(null);
-  const [isRoundTrip, setIsRoundTrip] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { openModal } = useModal();
@@ -35,17 +34,13 @@ export function useCourseMap({ onSaveRoute }: UseCourseMapParams = {}) {
   const rawDistanceKmRef = useRef<number | null>(null);
   const lastRouteRef = useRef<Pick<SaveRoutePayload, 'pathData' | 'startPoint'> | null>(null);
   const mapRef = useRef<TmapMapLike | null>(null);
-  const isRoundTripRef = useRef(false);
   const pointsRef = useRef<TmapCoordinate[]>([]);
 
   const setMapInstance = useCallback((map: TmapMapLike) => {
     mapRef.current = map;
   }, []);
 
-  const { clearPolyline, drawPointMarkers, drawRoutePolyline } = useTmapOverlays(
-    mapRef,
-    isRoundTripRef,
-  );
+  const { clearPolyline, drawPointMarkers, drawRoutePolyline } = useTmapOverlays(mapRef);
 
   const { initializeMap } = useTmapMapInitialization({
     drawPointMarkers,
@@ -131,8 +126,8 @@ export function useCourseMap({ onSaveRoute }: UseCourseMapParams = {}) {
       setRawDistanceKm(rawKm);
 
       onSaveRoute?.({
-        totalDistanceKm: Number((rawKm * (isRoundTrip ? 2 : 1)).toFixed(2)),
-        isRoundTrip,
+        totalDistanceKm: Number(rawKm.toFixed(2)),
+        isRoundTrip: false,
         ...routePayload,
       });
     } catch (error) {
@@ -140,23 +135,11 @@ export function useCourseMap({ onSaveRoute }: UseCourseMapParams = {}) {
     } finally {
       setIsSaving(false);
     }
-  }, [drawRoutePolyline, isRoundTrip, onSaveRoute, points]);
+  }, [drawRoutePolyline, onSaveRoute, points]);
 
   useEffect(() => {
     pointsRef.current = points;
   }, [points]);
-
-  useEffect(() => {
-    isRoundTripRef.current = isRoundTrip;
-    if (pointsRef.current.length > 0) {
-      drawPointMarkers(pointsRef.current);
-    }
-    if (!lastRouteRef.current || rawDistanceKmRef.current === null) return;
-    const adjusted = Number((rawDistanceKmRef.current * (isRoundTrip ? 2 : 1)).toFixed(2));
-    onSaveRoute?.({ totalDistanceKm: adjusted, isRoundTrip, ...lastRouteRef.current });
-    // pointsRef, rawDistanceKmRef, lastRouteRef are refs — they don't need to be listed
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isRoundTrip, drawPointMarkers]);
 
   const saveRoute = useCallback(() => {
     openModal({
@@ -171,14 +154,11 @@ export function useCourseMap({ onSaveRoute }: UseCourseMapParams = {}) {
 
   const isPointLimitReached = points.length >= MAX_POINT_LENGTH;
   const waypointCount = useMemo(() => Math.max(0, points.length - 2), [points.length]);
-  const displayDistanceKm =
-    rawDistanceKm !== null ? Number((rawDistanceKm * (isRoundTrip ? 2 : 1)).toFixed(2)) : null;
+  const displayDistanceKm = rawDistanceKm !== null ? Number(rawDistanceKm.toFixed(2)) : null;
 
   return {
     points,
     displayDistanceKm,
-    isRoundTrip,
-    setIsRoundTrip,
     isSaving,
     errorMessage,
     isPointLimitReached,
