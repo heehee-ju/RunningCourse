@@ -37,7 +37,6 @@ export const Toast = ({ state, message }: ToastProps) => {
           <Icon
             name={state === 'success' ? 'circleCheckBig' : 'circleAlert'}
             size={16}
-            strokeWidth={2}
           />
         </span>
         <span className={styles.text}>{message ?? TOAST_TEXT[state]}</span>

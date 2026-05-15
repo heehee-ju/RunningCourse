@@ -82,7 +82,7 @@ export const Icon = ({
   name,
   size = 24,
   color = 'currentColor',
-  strokeWidth = 2,
+  strokeWidth = 1.5,
   className,
 }: IconProps) => {
   const LucideComponent = iconRegistry[name];
@@ -126,7 +126,7 @@ export function FieldLucideIcon({
   icon: LucideComponent,
   size = 16,
   color = 'currentColor',
-  strokeWidth = 2,
+  strokeWidth = 1.5,
   className,
 }: FieldLucideIconProps) {
   return (
@@ -183,7 +183,7 @@ export function getIconSvgMarkup({
   name,
   size = 24,
   color = 'currentColor',
-  strokeWidth = 2,
+  strokeWidth = 1.5,
   className,
 }: IconSvgMarkupOptions) {
   const iconComponent = iconRegistry[name] as LucideIconWithNode;
