@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useId, useRef } from 'react';
+import { useCallback, useEffect, useId, useRef } from 'react';
 
-import { Button } from '@/commons/components/button';
 import { Icon } from '@/commons/components/icons';
 import { getCurrentPositionWithFallback } from '@/commons/utils/geo/geolocation';
 import { getTmapv3Runtime } from '@/commons/utils/tmap/runtime';
@@ -27,7 +26,6 @@ export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) 
     isRoundTrip,
     setIsRoundTrip,
     isSaving,
-    errorMessage,
     isPointLimitReached,
     mapRef,
     initializeMap,
@@ -63,65 +61,129 @@ export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) 
     };
   }, [createCurrentLocationMarker, initializeMap, mapRef]);
 
+  const handleRefreshLocation = useCallback(() => {
+    getCurrentPositionWithFallback((lat, lng) => {
+      const map = mapRef.current;
+      if (!map) return;
+      const Tmapv3 = getTmapv3Runtime();
+      if (!Tmapv3) return;
+      (map as TmapMap).setCenter(new Tmapv3.LatLng(lat, lng));
+    });
+  }, [mapRef]);
+
+  const canSave = points.length >= 2;
+
   return (
     <section className={styles.root}>
       <div id={mapContainerIdRef.current} className={styles.map} />
 
-      <div className={styles.topRight}>
-        <div className={styles.topInfoPanel}>
-          <p className={styles.distanceText}>
-            총 거리: {displayDistanceKm !== null ? `${displayDistanceKm.toFixed(2)}km` : '-'}
-          </p>
-          <p className={isPointLimitReached ? styles.waypointTextFull : styles.waypointText}>
-            경로 지점 {points.length}/7
-          </p>
-          {errorMessage && <p className={styles.errorText}>{errorMessage}</p>}
-        </div>
-
-        <label className={styles.roundTripLabel}>
-          <input
-            type="checkbox"
-            checked={isRoundTrip}
-            onChange={(e) => setIsRoundTrip(e.target.checked)}
-            className={styles.roundTripCheckbox}
-          />
-          왕복코스
-        </label>
-      </div>
-
-      <div className={styles.bottomPanel}>
-        <Button
-          variant="fill"
-          borderRadius="r12"
-          size="small"
-          color="dark"
-          iconOnly
-          leftIcon={<Icon name="undo-2" size={16} />}
+      {/* 우측 상단: 되돌리기 | 초기화 */}
+      <div className={styles.topRightControls}>
+        <button
+          type="button"
+          className={styles.controlButton}
           onClick={undo}
           disabled={points.length === 0}
-        />
+        >
+          <Icon name="undo-2" size={24} />
+          <span className={styles.controlButtonLabel}>되돌리기</span>
+        </button>
 
-        <Button
-          variant="fill"
-          borderRadius="r12"
-          size="small"
-          color="dark"
-          iconOnly
-          leftIcon={<Icon name="rotateCcw" size={16} />}
+        <button
+          type="button"
+          className={styles.controlButton}
           onClick={reset}
           disabled={points.length === 0}
-        />
+        >
+          <Icon name="rotateCcw" size={24} />
+          <span className={styles.controlButtonLabel}>초기화</span>
+        </button>
+      </div>
 
-        <Button
-          variant="fill"
-          borderRadius="r12"
-          size="small"
-          color="dark"
-          iconOnly
-          leftIcon={<Icon name="save" size={16} />}
-          onClick={() => void saveRoute()}
-          disabled={isSaving || points.length < 2}
-        />
+      {/* 하단 바 좌측 위: 현재 위치 */}
+      <button type="button" className={styles.locationButton} onClick={handleRefreshLocation}>
+        <Icon name="locateFixed" size={24} />
+      </button>
+
+      {/* 하단 바 */}
+      <div className={styles.bottomBar}>
+        {/* 왕복 설정 */}
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span>왕복 설정</span>
+            <div className={styles.infoIconWrapper}>
+              <Icon name="info" size={15} color="#7d7d7d" />
+              <div className={styles.tooltip}>
+                왕복: 설정한 편도 경로를 기준으로
+                <br />
+                거리 × 2로 계산됩니다.
+              </div>
+            </div>
+          </div>
+          <div className={styles.toggle}>
+            <button
+              type="button"
+              className={`${styles.toggleOption} ${!isRoundTrip ? styles.toggleOptionActive : styles.toggleOptionInactive}`}
+              onClick={() => setIsRoundTrip(false)}
+            >
+              편도
+            </button>
+            <button
+              type="button"
+              className={`${styles.toggleOption} ${isRoundTrip ? styles.toggleOptionActive : styles.toggleOptionInactive}`}
+              onClick={() => setIsRoundTrip(true)}
+            >
+              왕복
+            </button>
+          </div>
+        </div>
+
+        <div className={styles.divider} />
+
+        {/* 경로 지점 */}
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <Icon name="mapPin" size={15} color="#7d7d7d" />
+            <span>경로 지점</span>
+          </div>
+          <div className={styles.countDisplay}>
+            <span className={isPointLimitReached ? styles.countNumberFull : styles.countNumber}>
+              {points.length}
+            </span>
+            <span className={styles.countDivider}>/ 7</span>
+          </div>
+        </div>
+
+        <div className={styles.divider} />
+
+        {/* 총 거리 */}
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <Icon name="ruler" size={15} color="#7d7d7d" />
+            <span>총 거리</span>
+          </div>
+          <div className={styles.distanceDisplay}>
+            <span className={styles.distanceValue}>
+              {displayDistanceKm !== null ? displayDistanceKm.toFixed(2) : '-'}
+            </span>
+            <span className={styles.distanceUnit}>km</span>
+          </div>
+        </div>
+
+        <div className={styles.divider} />
+
+        {/* 코스 저장 */}
+        <div className={styles.saveSection}>
+          <button
+            type="button"
+            className={`${styles.saveButton} ${canSave ? styles.saveButtonActive : ''}`}
+            onClick={() => void saveRoute()}
+            disabled={isSaving || !canSave}
+          >
+            <Icon name="save" size={14} />
+            <span>코스 저장</span>
+          </button>
+        </div>
       </div>
     </section>
   );
