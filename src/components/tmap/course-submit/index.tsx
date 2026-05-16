@@ -23,6 +23,8 @@ export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) 
   const {
     points,
     displayDistanceKm,
+    isRoundTrip,
+    setIsRoundTrip,
     isSaving,
     isPointLimitReached,
     mapRef,
@@ -105,6 +107,39 @@ export default function TmapCourseSubmit({ onSaveRoute }: CourseSubmitMapProps) 
 
       {/* 하단 바 */}
       <div className={styles.bottomBar}>
+        {/* 왕복 설정 */}
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span>왕복 설정</span>
+            <div className={styles.infoIconWrapper}>
+              <Icon name="info" size={15} color="#7d7d7d" />
+              <div className={styles.tooltip}>
+                왕복: 설정한 편도 경로를 기준으로
+                <br />
+                거리 × 2로 계산됩니다.
+              </div>
+            </div>
+          </div>
+          <div className={styles.toggle}>
+            <button
+              type="button"
+              className={`${styles.toggleOption} ${!isRoundTrip ? styles.toggleOptionActive : styles.toggleOptionInactive}`}
+              onClick={() => setIsRoundTrip(false)}
+            >
+              편도
+            </button>
+            <button
+              type="button"
+              className={`${styles.toggleOption} ${isRoundTrip ? styles.toggleOptionActive : styles.toggleOptionInactive}`}
+              onClick={() => setIsRoundTrip(true)}
+            >
+              왕복
+            </button>
+          </div>
+        </div>
+
+        <div className={styles.divider} />
+
         {/* 경로 지점 */}
         <div className={styles.section}>
           <div className={styles.sectionHeader}>

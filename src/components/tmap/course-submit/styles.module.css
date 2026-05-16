@@ -91,7 +91,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 76px;
+  height: 56px;
   display: flex;
   align-items: stretch;
   background: #fafafa;
@@ -186,7 +186,10 @@
   line-height: 1.5;
   cursor: pointer;
   background: transparent;
-  transition: background 120ms, border-color 120ms, color 120ms;
+  transition:
+    background 120ms,
+    border-color 120ms,
+    color 120ms;
 }
 
 .toggleOptionActive {
@@ -270,7 +273,10 @@
   color: #b2b2b2;
   cursor: default;
   white-space: nowrap;
-  transition: background 120ms, border-color 120ms, color 120ms;
+  transition:
+    background 120ms,
+    border-color 120ms,
+    color 120ms;
 }
 
 .saveButtonActive {
