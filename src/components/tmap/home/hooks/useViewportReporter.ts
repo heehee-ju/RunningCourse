@@ -13,6 +13,8 @@ import type { MutableRefObject } from 'react';
 type UseViewportReporterParams = {
   mapContainerId: string;
   bottomSheetVisibleHeightRef: MutableRefObject<number>;
+  /** true면 쿼리/가시 뷰포트를 부모로 올리지 않음(마우스 팬 등) */
+  isViewportReportSuppressed?: () => boolean;
   onViewportChanged?: (viewport: RouteViewport) => void;
   onVisibleViewportChanged?: (viewport: RouteViewport | null) => void;
   isDebugEnabled: () => boolean;
@@ -32,6 +34,7 @@ function isSameRouteViewport(left: RouteViewport | null, right: RouteViewport | 
 export function useViewportReporter({
   mapContainerId,
   bottomSheetVisibleHeightRef,
+  isViewportReportSuppressed,
   onViewportChanged,
   onVisibleViewportChanged,
   isDebugEnabled,
@@ -93,6 +96,10 @@ export function useViewportReporter({
 
   const emitViewportReports = useCallback(
     (map: TmapMap) => {
+      if (isViewportReportSuppressed?.()) {
+        return;
+      }
+
       let queryEmitted = false;
       let visibleEmitted = false;
 
@@ -132,6 +139,7 @@ export function useViewportReporter({
       onViewportChanged,
       onVisibleViewportChanged,
       readMapBoundsViewport,
+      isViewportReportSuppressed,
     ],
   );
 
@@ -153,10 +161,14 @@ export function useViewportReporter({
         window.clearTimeout(viewportReportTimerRef.current);
       }
       viewportReportTimerRef.current = window.setTimeout(() => {
+        if (isViewportReportSuppressed?.()) {
+          viewportReportTimerRef.current = null;
+          return;
+        }
         emitViewportReports(map);
       }, delay);
     },
-    [emitViewportReports],
+    [emitViewportReports, isViewportReportSuppressed],
   );
 
   const clearViewportReporterState = useCallback(() => {

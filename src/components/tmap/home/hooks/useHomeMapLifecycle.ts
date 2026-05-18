@@ -55,6 +55,8 @@ type UseHomeMapLifecycleParams = {
   scheduleMarkerVisibilitySync: (map: TmapMap) => void;
   emitViewportReports: (map: TmapMap) => void;
   syncRouteMarkers: (map: TmapMap, nextRoutes: Route[]) => void;
+  /** 뷰포트 리포트(쿼리·토스트 연동)를 잠시 막을 때 true — SDK idle과 포인터 누름을 함께 쓴다 */
+  isViewportReportSuppressed?: () => boolean;
 };
 
 export function useHomeMapLifecycle({
@@ -90,6 +92,7 @@ export function useHomeMapLifecycle({
   scheduleMarkerVisibilitySync,
   emitViewportReports,
   syncRouteMarkers,
+  isViewportReportSuppressed,
 }: UseHomeMapLifecycleParams) {
   const [mapReadyToken, setMapReadyToken] = useState(0);
   const hasAppliedInitialViewportRef = useRef(false);
@@ -182,7 +185,9 @@ export function useHomeMapLifecycle({
         if (!isMapInteractingRef.current) {
           scheduleMarkerVisibilitySync(map);
         }
-        emitViewportReports(map);
+        if (!isViewportReportSuppressed?.()) {
+          emitViewportReports(map);
+        }
       }, 450);
 
       syncRouteMarkers(map, routesRef.current);
@@ -296,6 +301,7 @@ export function useHomeMapLifecycle({
     zoomUpdateRafRef,
     currentLocationMarkerRef,
     currentLocationCoordinateRef,
+    isViewportReportSuppressed,
   ]);
 
   useEffect(() => {

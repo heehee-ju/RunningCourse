@@ -134,6 +134,13 @@ export function TmapHome({
   const markerVisibilityTimerRef = useRef<number | null>(null);
   const isMapInteractingRef = useRef(false);
   const interactionWatchdogTimerRef = useRef<number | null>(null);
+  /** map_div에서 포인터가 눌린 동안(마우스 팬 등) — SDK idle이 먼저 와도 뷰포트 리포트를 막는다 */
+  const isPrimaryPointerDownOnMapRef = useRef(false);
+
+  const isViewportReportSuppressed = useCallback(
+    () => isMapInteractingRef.current || isPrimaryPointerDownOnMapRef.current,
+    [],
+  );
   const lastAppliedZoomRef = useRef<number | null>(null);
   const markerHoverCountRef = useRef(0);
   const bottomSheetVisibleHeightRef = useRef(bottomSheetVisibleHeight);
@@ -197,6 +204,7 @@ export function TmapHome({
   } = useViewportReporter({
     mapContainerId: 'map_div',
     bottomSheetVisibleHeightRef,
+    isViewportReportSuppressed,
     onViewportChanged,
     onVisibleViewportChanged,
     isDebugEnabled: isMarkerLifecycleDebugEnabled,
@@ -456,7 +464,62 @@ export function TmapHome({
     scheduleMarkerVisibilitySync: scheduleMarkerVisibilitySyncByHook,
     emitViewportReports,
     syncRouteMarkers: syncRouteMarkersByHook,
+    isViewportReportSuppressed,
   });
+
+  // Tmap JS는 마우스 팬 시 drag/bounds_changed가 안 오는 경우가 있어, map_div 포인터로 상호작용 여부를 잡는다.
+  useEffect(() => {
+    if (mapReadyToken === 0) return undefined;
+    const el = document.getElementById('map_div');
+    if (!el) return undefined;
+
+    let activePointerId: number | null = null;
+
+    const endTracking = (event: PointerEvent) => {
+      if (activePointerId === null || event.pointerId !== activePointerId) return;
+      activePointerId = null;
+      try {
+        el.releasePointerCapture(event.pointerId);
+      } catch {
+        /* noop */
+      }
+      isPrimaryPointerDownOnMapRef.current = false;
+      const map = mapInstance.current;
+      if (!map) return;
+      syncRouteMarkersDisplayForZoomByHook(map);
+      scheduleMarkerVisibilitySyncByHook(map);
+      scheduleViewportReport(map);
+      onDragSettled?.();
+    };
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      activePointerId = event.pointerId;
+      isPrimaryPointerDownOnMapRef.current = true;
+      try {
+        el.setPointerCapture(event.pointerId);
+      } catch {
+        /* noop */
+      }
+    };
+
+    el.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointerup', endTracking, true);
+    window.addEventListener('pointercancel', endTracking, true);
+
+    return () => {
+      isPrimaryPointerDownOnMapRef.current = false;
+      el.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointerup', endTracking, true);
+      window.removeEventListener('pointercancel', endTracking, true);
+    };
+  }, [
+    mapReadyToken,
+    onDragSettled,
+    scheduleMarkerVisibilitySyncByHook,
+    scheduleViewportReport,
+    syncRouteMarkersDisplayForZoomByHook,
+  ]);
 
   useEffect(() => {
     routesRef.current = routes;

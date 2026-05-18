@@ -19,10 +19,20 @@
 /* ── 우측 상단 컨트롤 버튼 그룹 ── */
 
 .topRightControls {
+/* ── 우측 상단 컨트롤 버튼 그룹 ── */
+
+.topRightControls {
   position: absolute;
   top: 12px;
   right: 12px;
   z-index: 5;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.controlButton {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -37,7 +47,17 @@
   gap: 4px;
   width: 48px;
   height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 48px;
+  height: 48px;
   border-radius: 12px;
+  background: #f3f3f3;
+  border: none;
+  cursor: pointer;
+  color: #0a0a0a;
+  transition: background 120ms;
   background: #f3f3f3;
   border: none;
   cursor: pointer;
@@ -62,8 +82,27 @@
 }
 
 .locationButton {
+.controlButton:hover:not(:disabled) {
+  background: #e8e8e8;
+}
+
+.controlButton:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.controlButtonLabel {
+  font-size: 10px;
+  line-height: 1;
+  color: #0a0a0a;
+  white-space: nowrap;
+}
+
+.locationButton {
   position: absolute;
   left: 12px;
+  bottom: calc(76px + 12px);
+  z-index: 5;
   bottom: calc(76px + 12px);
   z-index: 5;
   display: flex;
@@ -117,9 +156,45 @@
   font-size: 11px;
   font-weight: 500;
   color: #7d7d7d;
+.section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 17px 4px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #7d7d7d;
   white-space: nowrap;
 }
 
+.infoIconWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: default;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-20%);
+  background: rgba(17, 24, 39, 0.88);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.6;
+  padding: 7px 10px;
+  border-radius: 8px;
 .infoIconWrapper {
   position: relative;
   display: flex;
@@ -166,6 +241,32 @@
   align-self: center;
   background: #e4e4e4;
   flex-shrink: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 150ms;
+  z-index: 10;
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 20%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(17, 24, 39, 0.88);
+}
+
+.infoIconWrapper:hover .tooltip {
+  opacity: 1;
+}
+
+.divider {
+  width: 1px;
+  height: 48px;
+  align-self: center;
+  background: #e4e4e4;
+  flex-shrink: 0;
 }
 
 /* ── 왕복 설정 토글 ── */
@@ -176,8 +277,22 @@
 }
 
 .toggleOption {
+/* ── 왕복 설정 토글 ── */
+
+.toggle {
+  display: flex;
+  gap: 2px;
+}
+
+.toggleOption {
   display: flex;
   align-items: center;
+  justify-content: center;
+  padding: 2.5px 6px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  font-size: 9px;
+  line-height: 1.5;
   justify-content: center;
   padding: 2.5px 6px;
   border-radius: 5px;
@@ -196,8 +311,29 @@
   border-color: #63ac7d;
   background: #e8f3ec;
   color: #606060;
+.toggleOptionActive {
+  border-color: #63ac7d;
+  background: #e8f3ec;
+  color: #606060;
 }
 
+.toggleOptionInactive {
+  color: #bababa;
+}
+
+/* ── 경로 지점 ── */
+
+.countDisplay {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.countNumber {
+  font-size: 16px;
+  font-weight: 600;
+  color: #696969;
+  line-height: 1;
 .toggleOptionInactive {
   color: #bababa;
 }
@@ -224,6 +360,7 @@
   line-height: 1;
 }
 
+.countDivider {
 .countDivider {
   font-size: 12px;
   color: #9b9b9b;
