@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Route } from '@/commons/types/routerun';
 import type { TmapV3 } from '@/commons/types/tmap';
-import { getWaypointMarkerIconUrl } from '@/commons/utils/marker/waypoint-marker';
+import { getCourseSubmitMarkerIconUrl } from '@/commons/utils/marker/waypoint-marker';
 import {
   buildWaypointMarkerModels,
   dedupeConsecutiveCoordinates,
@@ -278,12 +278,10 @@ export function TmapCourseDetail({ course, mapLabel }: TmapCourseDetailProps) {
     clearWaypointMarkers();
 
     const drawMarkers = () => {
-      waypointMarkerModels.forEach((model) => {
+      waypointMarkerModels.forEach((model, index) => {
         const markerOptions: Record<string, unknown> = {
           position: new Tmapv3.LatLng(model.lat, model.lng),
-          icon: getWaypointMarkerIconUrl(model.role, model.viaOrder, {
-            isRoundTrip: course.is_round_trip,
-          }),
+          icon: getCourseSubmitMarkerIconUrl(index),
           map: mapInstance,
         };
 
@@ -357,7 +355,6 @@ export function TmapCourseDetail({ course, mapLabel }: TmapCourseDetailProps) {
     mapReady,
     course.start_lat,
     course.start_lng,
-    course.is_round_trip,
     lineCoordinates,
     savedRoutePoints,
     waypointMarkerModels,
